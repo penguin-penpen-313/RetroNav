@@ -313,31 +313,33 @@ function spdAngle(kmh) {
 function buildSpeedoSVG() {
   const svg = document.getElementById('speedoSvg');
   const {cx,cy,r,start,span,max} = S;
-  let h = '';
 
-  h += `<defs>
-    <linearGradient id="nGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffcc66"/>
-      <stop offset="40%" stop-color="#ff5500"/>
-      <stop offset="100%" stop-color="rgba(255,80,0,0)"/>
-    </linearGradient>
-    <radialGradient id="hubSpd" cx="38%" cy="32%">
-      <stop offset="0%" stop-color="#f0e090"/>
-      <stop offset="60%" stop-color="#c8a040"/>
-      <stop offset="100%" stop-color="#7a5010"/>
-    </radialGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  </defs>`;
+  // Use DOM API instead of innerHTML to avoid url() reference breakage in inserted SVG
+  const NS = 'http://www.w3.org/2000/svg';
 
-  // Background track arc (large arc)
+  function el(tag, attrs) {
+    const e = document.createElementNS(NS, tag);
+    for (const [k,v] of Object.entries(attrs)) e.setAttribute(k, v);
+    return e;
+  }
+
+  svg.innerHTML = ''; // clear
+
+  // Background track arc
   const p0 = pt(cx, cy, r, start);
   const p1 = pt(cx, cy, r, start + span);
-  h += `<path d="M${p0.x.toFixed(2)},${p0.y.toFixed(2)} A${r},${r} 0 1,1 ${p1.x.toFixed(2)},${p1.y.toFixed(2)}" fill="none" stroke="#2a1505" stroke-width="8"/>`;
+  svg.appendChild(el('path', {
+    d: `M${p0.x.toFixed(2)},${p0.y.toFixed(2)} A${r},${r} 0 1,1 ${p1.x.toFixed(2)},${p1.y.toFixed(2)}`,
+    fill: 'none', stroke: '#2a1505', 'stroke-width': '8'
+  }));
 
   // Red zone 130–180
   const pr0 = pt(cx, cy, r-10, spdAngle(130));
   const pr1 = pt(cx, cy, r-10, spdAngle(180));
-  h += `<path d="M${pr0.x.toFixed(2)},${pr0.y.toFixed(2)} A${r-10},${r-10} 0 0,1 ${pr1.x.toFixed(2)},${pr1.y.toFixed(2)}" fill="none" stroke="rgba(220,40,0,.5)" stroke-width="7"/>`;
+  svg.appendChild(el('path', {
+    d: `M${pr0.x.toFixed(2)},${pr0.y.toFixed(2)} A${r-10},${r-10} 0 0,1 ${pr1.x.toFixed(2)},${pr1.y.toFixed(2)}`,
+    fill: 'none', stroke: 'rgba(220,40,0,.55)', 'stroke-width': '7'
+  }));
 
   // Ticks and labels
   for (let i = 0; i <= 18; i++) {
@@ -346,28 +348,51 @@ function buildSpeedoSVG() {
     const major = i % 3 === 0;
     const r1 = r - 4, r2 = r1 - (major ? 18 : 9);
     const tp1 = pt(cx, cy, r1, ang), tp2 = pt(cx, cy, r2, ang);
-    h += `<line x1="${tp1.x.toFixed(2)}" y1="${tp1.y.toFixed(2)}" x2="${tp2.x.toFixed(2)}" y2="${tp2.y.toFixed(2)}" stroke="${major?'#c8a870':'#5a3020'}" stroke-width="${major?2.5:1}"/>`;
+    svg.appendChild(el('line', {
+      x1: tp1.x.toFixed(2), y1: tp1.y.toFixed(2),
+      x2: tp2.x.toFixed(2), y2: tp2.y.toFixed(2),
+      stroke: major ? '#c8a870' : '#5a3020',
+      'stroke-width': major ? '2.5' : '1'
+    }));
     if (major) {
       const lp = pt(cx, cy, r2 - 16, ang);
-      h += `<text x="${lp.x.toFixed(2)}" y="${(lp.y+4).toFixed(2)}" text-anchor="middle" fill="#a06030" font-size="13" font-family="Nixie One">${spd}</text>`;
+      const txt = document.createElementNS(NS, 'text');
+      txt.setAttribute('x', lp.x.toFixed(2));
+      txt.setAttribute('y', (lp.y + 4).toFixed(2));
+      txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('fill', '#a06030');
+      txt.setAttribute('font-size', '13');
+      txt.setAttribute('font-family', 'Nixie One');
+      txt.textContent = String(spd);
+      svg.appendChild(txt);
     }
   }
 
-  // ── NEEDLE — drawn LAST so it's always on top in SVG paint order ──
+  // NEEDLE — solid color, no url() reference, drawn last = on top
   const nLen = Math.round(r * 0.80);
   const nBack = 18;
-  // The group rotates around the gauge center.
-  // rotate(spdAngle(0), cx, cy) positions the needle at 0 km/h.
-  h += `<g id="spdNeedle" transform="rotate(${spdAngle(0)},${cx},${cy})">
-    <line x1="${cx}" y1="${cy+nBack}" x2="${cx}" y2="${cy-nLen}"
-      stroke="url(#nGrad)" stroke-width="3.5" stroke-linecap="round" filter="url(#glow)"/>
-  </g>`;
+  const needleG = el('g', { id: 'spdNeedle', transform: `rotate(${spdAngle(0)},${cx},${cy})` });
+  // Glow layer (slightly wider, dimmer)
+  needleG.appendChild(el('line', {
+    x1: cx, y1: cy + nBack, x2: cx, y2: cy - nLen,
+    stroke: 'rgba(255,120,0,0.35)', 'stroke-width': '8', 'stroke-linecap': 'round'
+  }));
+  // Main needle body
+  needleG.appendChild(el('line', {
+    x1: cx, y1: cy + nBack, x2: cx, y2: cy - nLen,
+    stroke: '#ff6600', 'stroke-width': '3.5', 'stroke-linecap': 'round'
+  }));
+  // Bright tip highlight
+  needleG.appendChild(el('line', {
+    x1: cx, y1: cy - nLen + 10, x2: cx, y2: cy - nLen,
+    stroke: '#ffcc44', 'stroke-width': '2.5', 'stroke-linecap': 'round'
+  }));
+  svg.appendChild(needleG);
 
-  // Hub cap — drawn after needle so it sits on top of needle base
-  h += `<circle cx="${cx}" cy="${cy}" r="12" fill="url(#hubSpd)"/>
-  <circle cx="${cx}" cy="${cy}" r="5" fill="#f8f0c0"/>`;
-
-  svg.innerHTML = h;
+  // Hub — drawn after needle so it covers needle base
+  svg.appendChild(el('circle', { cx, cy, r: '12', fill: '#c8a040' }));
+  svg.appendChild(el('circle', { cx, cy, r: '7',  fill: '#e8d070' }));
+  svg.appendChild(el('circle', { cx, cy, r: '3',  fill: '#fff8d0' }));
 }
 buildSpeedoSVG();
 
@@ -432,7 +457,7 @@ function buildAltSVG() {
   </g>`;
 
   // Hub
-  h += `<circle cx="${cx}" cy="${cy}" r="5" fill="url(#hubAlt)"/>
+  h += `<circle cx="${cx}" cy="${cy}" r="5" fill="#c8a040"/>
   <circle cx="${cx}" cy="${cy}" r="2.2" fill="#f8f0c0"/>`;
   h += `<text x="${cx}" y="${cy+43}" text-anchor="middle" fill="#3a1808" font-size="6" font-family="Oswald" letter-spacing="1">×10m</text>`;
 
@@ -533,7 +558,7 @@ function buildVSSVG() {
   </g>`;
 
   // Hub
-  h += `<circle cx="${cx}" cy="${cy}" r="5" fill="url(#hubVS)"/>
+  h += `<circle cx="${cx}" cy="${cy}" r="5" fill="#c8a040"/>
   <circle cx="${cx}" cy="${cy}" r="2.2" fill="#f8f0c0"/>`;
 
   svg.innerHTML = h;
