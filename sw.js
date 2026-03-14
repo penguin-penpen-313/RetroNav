@@ -1,5 +1,5 @@
 // バージョンを変更するだけで古いキャッシュが自動削除されます
-const CACHE_NAME = 'retronav-v2';
+const CACHE_NAME = 'retronav-v3';
 const ASSETS = [
   './',
   './index.html',
