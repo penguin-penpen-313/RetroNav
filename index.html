@@ -55,18 +55,29 @@
   @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.7}}
   .coord-value{font-family:'Nixie One',monospace;font-size:10px;color:var(--amber-dim)}
 
-  /* Speedo */
+  /* ── Speedometer ── */
+  /* CRITICAL: speedo-ring is position:relative, SVG fills it,
+     speed-center is absolute and rendered INSIDE the same stacking context.
+     The needle lives in the SVG. We ensure hub+needle are drawn LAST in SVG
+     so they appear above everything else. The digital readout sits above via z-index
+     but we shift it DOWN so it doesn't cover the needle path area. */
   .speedo-container{position:relative;width:min(290px,74vw);height:min(290px,74vw)}
   .speedo-ring{
     width:100%;height:100%;border-radius:50%;
     background:radial-gradient(circle at 45% 40%,#2e1a08,#1a0d00);
     box-shadow:0 0 0 3px #6b3a1f,0 0 0 6px #3d1f0a,0 0 0 8px #c8b89a,0 0 0 10px #8b6914,0 8px 32px rgba(0,0,0,.8),inset 0 0 40px rgba(0,0,0,.6);
-    display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
+    position:relative;overflow:hidden;
   }
-  .speedo-svg{position:absolute;inset:0;width:100%;height:100%}
-  .speedo-center{position:absolute;display:flex;flex-direction:column;align-items:center;z-index:5;margin-top:28px}
-  .speed-value{font-family:'Nixie One',monospace;font-size:min(68px,17vw);color:var(--nixie);text-shadow:0 0 8px var(--nixie-glow),0 0 20px rgba(255,100,0,.5),0 0 50px rgba(255,80,0,.2);line-height:1}
-  .speed-unit{font-size:11px;font-weight:300;color:var(--amber-dim);letter-spacing:3px;margin-top:2px}
+  /* SVG fills ring completely */
+  .speedo-svg{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1}
+  /* Digital readout sits above SVG but pushed to bottom third of gauge */
+  .speedo-center{
+    position:absolute;bottom:18%;left:0;right:0;
+    display:flex;flex-direction:column;align-items:center;
+    z-index:2;pointer-events:none;
+  }
+  .speed-value{font-family:'Nixie One',monospace;font-size:min(56px,14vw);color:var(--nixie);text-shadow:0 0 8px var(--nixie-glow),0 0 20px rgba(255,100,0,.5);line-height:1}
+  .speed-unit{font-size:10px;font-weight:300;color:var(--amber-dim);letter-spacing:3px;margin-top:1px}
 
   /* Cards */
   .card{width:100%;background:linear-gradient(145deg,#1a0d00,#2a1505);border-radius:12px;border:1px solid #6b3a1f;box-shadow:0 0 0 2px #3d1f0a,inset 0 1px 0 rgba(255,255,255,.05),0 4px 16px rgba(0,0,0,.5);padding:12px 16px}
@@ -79,11 +90,10 @@
   .direction-value{font-family:'Nixie One',monospace;font-size:42px;color:var(--nixie);text-shadow:0 0 10px var(--nixie-glow);line-height:1}
   .direction-name{font-size:14px;font-weight:600;color:var(--cream);letter-spacing:3px;margin-top:4px}
 
-  /* Accuracy lamps — 6 in a row, fixed colors: red(1) amber(2) green(3) */
+  /* Accuracy lamps */
   .lamp-panel{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
   .lamp-label{font-size:7px;letter-spacing:2px;color:var(--amber-dim);text-align:right}
   .lamp-row-single{display:flex;gap:6px;align-items:center}
-  /* Each lamp has a fixed color class set at build time */
   .lamp{width:10px;height:10px;border-radius:50%;background:#1a0800;border:1px solid #3a1a08;transition:all .3s}
   .lamp.lit-red  {background:#cc2200;border-color:#ff3300;box-shadow:0 0 7px #ff2200}
   .lamp.lit-amber{background:#cc7700;border-color:#ffaa00;box-shadow:0 0 7px #ff9900}
@@ -152,7 +162,9 @@
       <!-- ══ Speedometer ══ -->
       <div class="speedo-container">
         <div class="speedo-ring">
+          <!-- SVG contains everything including needle (drawn last = on top) -->
           <svg class="speedo-svg" viewBox="0 0 280 280" id="speedoSvg"></svg>
+          <!-- Digital readout floats above SVG, positioned at bottom so needle is visible -->
           <div class="speedo-center">
             <div class="speed-value" id="speedValue">0</div>
             <div class="speed-unit">km/h</div>
@@ -187,11 +199,9 @@
             <div class="direction-value" id="headingValue">---</div>
             <div class="direction-name" id="directionName">-- · --</div>
           </div>
-          <!-- 6 lamps in a row: [red][amber][amber][green][green][green] -->
           <div class="lamp-panel">
             <div class="lamp-label">GPS精度</div>
             <div class="lamp-row-single">
-              <!-- lamp index 0=red, 1=amber, 2=amber, 3=green, 4=green, 5=green -->
               <div class="lamp" id="lmp0"></div>
               <div class="lamp" id="lmp1"></div>
               <div class="lamp" id="lmp2"></div>
@@ -265,105 +275,97 @@
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════
-// UNIVERSAL needle helper
-// Uses SVG <line> from center pointing UP, rotated via
-// SVG transform="rotate(deg, cx, cy)" — no CSS transform-origin conflicts.
-// angleDeg: 0 = needle points UP (12 o'clock)
-// ═══════════════════════════════════════════════════════
-function setNeedleAngle(elemId, angleDeg, cx, cy) {
-  const el = document.getElementById(elemId);
-  if (!el) return;
-  el.setAttribute('transform', `rotate(${angleDeg}, ${cx}, ${cy})`);
+// ═══════════════════════════════════════════════════════════════
+// CORE HELPER: rotate an SVG <g> element using SVG-native transform.
+// This avoids ALL CSS transform-origin ambiguity.
+// angleDeg: 0 = needle points UP (12 o'clock position)
+// ═══════════════════════════════════════════════════════════════
+function rotateSvgGroup(id, angleDeg, cx, cy) {
+  const el = document.getElementById(id);
+  if (el) el.setAttribute('transform', `rotate(${angleDeg},${cx},${cy})`);
 }
 
-// ═══════════════════════════════════════════════════════
+// Place a point on a circle.
+// angleDeg: 0=12 o'clock, positive=clockwise (matches SVG screen coords)
+function pt(cx, cy, r, angleDeg) {
+  const rad = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // SPEEDOMETER
-// Layout: 0 km/h at ~220° CW from top (7 o'clock side)
-//         180 km/h at ~480° = 120° CW from top (4 o'clock side)
-//         Total span = 260°
+// 0 km/h  → needle at -130° from 12 o'clock (≈ 7 o'clock)
+// 180 km/h → needle at +130° from 12 o'clock (≈ 5 o'clock)
+// Span: 260°
 //
-// In SVG angles (rotate(x, cx, cy) — x is CW from 12 o'clock):
-//   speed=0   → needle angle = -130° (i.e. 220° - 90° ... actually just use direct mapping)
-//
-// Simplest approach: define startAngle as the SVG rotation when speed=0.
-// rotate(0)=12 o'clock. We want 0 km/h at 7 o'clock = -130° from 12 = rotate(-130).
-// We want 180 km/h at 5 o'clock = +130° from 12 = rotate(+130).
-// Total span = 260°, startAngle = -130°.
-// ═══════════════════════════════════════════════════════
-const SPD_CX = 140, SPD_CY = 140, SPD_R = 118;
-const SPD_START = -130; // degrees from 12 o'clock when speed=0
-const SPD_SPAN  =  260; // total degrees
-const SPD_MAX   =  180; // km/h
+// FIX for hidden needle: everything — ticks, labels, needle, hub —
+// is drawn inside ONE <svg>. The needle group is the LAST element,
+// so it renders on top of everything in SVG paint order.
+// The HTML .speedo-center overlay is pushed to the bottom 20% of
+// the gauge so it doesn't cover the needle sweep area.
+// ═══════════════════════════════════════════════════════════════
+const S = { cx:140, cy:140, r:118, start:-130, span:260, max:180 };
 
 function spdAngle(kmh) {
-  return SPD_START + (Math.min(kmh, SPD_MAX) / SPD_MAX) * SPD_SPAN;
-}
-
-// Convert needle angle (0=12 o'clock, CW) to SVG arc coordinate angle (0=3 o'clock, CCW)
-// svgCoord = -(needleAngle - 90) = 90 - needleAngle
-function needleToCoord(needleDeg) {
-  return (needleDeg - 90) * Math.PI / 180; // standard math radians
-}
-
-function ptOnCircle(cx, cy, r, needleDeg) {
-  const rad = (needleDeg - 90) * Math.PI / 180;
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  return S.start + (Math.min(Math.max(kmh,0), S.max) / S.max) * S.span;
 }
 
 function buildSpeedoSVG() {
   const svg = document.getElementById('speedoSvg');
-  const cx = SPD_CX, cy = SPD_CY, r = SPD_R;
+  const {cx,cy,r,start,span,max} = S;
   let h = '';
 
-  // Defs
   h += `<defs>
     <linearGradient id="nGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ffaa44"/>
-      <stop offset="60%" stop-color="#ff4400"/>
-      <stop offset="100%" stop-color="transparent"/>
+      <stop offset="0%" stop-color="#ffcc66"/>
+      <stop offset="40%" stop-color="#ff5500"/>
+      <stop offset="100%" stop-color="rgba(255,80,0,0)"/>
     </linearGradient>
-    <radialGradient id="hubG" cx="40%" cy="35%">
-      <stop offset="0%" stop-color="#e8d880"/>
-      <stop offset="100%" stop-color="#8b6914"/>
+    <radialGradient id="hubSpd" cx="38%" cy="32%">
+      <stop offset="0%" stop-color="#f0e090"/>
+      <stop offset="60%" stop-color="#c8a040"/>
+      <stop offset="100%" stop-color="#7a5010"/>
     </radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>`;
 
-  // Background track arc (from start to end angle)
-  const p0 = ptOnCircle(cx, cy, r, SPD_START);
-  const p1 = ptOnCircle(cx, cy, r, SPD_START + SPD_SPAN);
+  // Background track arc (large arc)
+  const p0 = pt(cx, cy, r, start);
+  const p1 = pt(cx, cy, r, start + span);
   h += `<path d="M${p0.x.toFixed(2)},${p0.y.toFixed(2)} A${r},${r} 0 1,1 ${p1.x.toFixed(2)},${p1.y.toFixed(2)}" fill="none" stroke="#2a1505" stroke-width="8"/>`;
 
-  // Red zone arc (130–180 km/h)
-  const pr0 = ptOnCircle(cx, cy, r - 10, spdAngle(130));
-  const pr1 = ptOnCircle(cx, cy, r - 10, spdAngle(180));
-  h += `<path d="M${pr0.x.toFixed(2)},${pr0.y.toFixed(2)} A${r-10},${r-10} 0 0,1 ${pr1.x.toFixed(2)},${pr1.y.toFixed(2)}" fill="none" stroke="rgba(255,50,0,.4)" stroke-width="6"/>`;
+  // Red zone 130–180
+  const pr0 = pt(cx, cy, r-10, spdAngle(130));
+  const pr1 = pt(cx, cy, r-10, spdAngle(180));
+  h += `<path d="M${pr0.x.toFixed(2)},${pr0.y.toFixed(2)} A${r-10},${r-10} 0 0,1 ${pr1.x.toFixed(2)},${pr1.y.toFixed(2)}" fill="none" stroke="rgba(220,40,0,.5)" stroke-width="7"/>`;
 
-  // Tick marks and labels — using same spdAngle() as needle
+  // Ticks and labels
   for (let i = 0; i <= 18; i++) {
     const spd = i * 10;
     const ang = spdAngle(spd);
-    const r1 = r - 4, r2 = r1 - (i % 3 === 0 ? 18 : 9);
-    const tp1 = ptOnCircle(cx, cy, r1, ang);
-    const tp2 = ptOnCircle(cx, cy, r2, ang);
-    const isMajor = i % 3 === 0;
-    h += `<line x1="${tp1.x.toFixed(2)}" y1="${tp1.y.toFixed(2)}" x2="${tp2.x.toFixed(2)}" y2="${tp2.y.toFixed(2)}" stroke="${isMajor ? '#c8a870' : '#6b3a1f'}" stroke-width="${isMajor ? 2.5 : 1}"/>`;
-    if (isMajor) {
-      const lp = ptOnCircle(cx, cy, r2 - 17, ang);
-      h += `<text x="${lp.x.toFixed(2)}" y="${(lp.y + 4).toFixed(2)}" text-anchor="middle" fill="#a06030" font-size="13" font-family="Nixie One">${spd}</text>`;
+    const major = i % 3 === 0;
+    const r1 = r - 4, r2 = r1 - (major ? 18 : 9);
+    const tp1 = pt(cx, cy, r1, ang), tp2 = pt(cx, cy, r2, ang);
+    h += `<line x1="${tp1.x.toFixed(2)}" y1="${tp1.y.toFixed(2)}" x2="${tp2.x.toFixed(2)}" y2="${tp2.y.toFixed(2)}" stroke="${major?'#c8a870':'#5a3020'}" stroke-width="${major?2.5:1}"/>`;
+    if (major) {
+      const lp = pt(cx, cy, r2 - 16, ang);
+      h += `<text x="${lp.x.toFixed(2)}" y="${(lp.y+4).toFixed(2)}" text-anchor="middle" fill="#a06030" font-size="13" font-family="Nixie One">${spd}</text>`;
     }
   }
 
-  // Needle — SVG rotate around center, so no CSS transform-origin issues
-  const nLen = r * 0.78;
-  const nBack = 16;
-  h += `<g id="spdNeedle" transform="rotate(${SPD_START}, ${cx}, ${cy})">
-    <line x1="${cx}" y1="${cy - nLen}" x2="${cx}" y2="${cy + nBack}" stroke="url(#nGrad)" stroke-width="3.5" stroke-linecap="round"/>
+  // ── NEEDLE — drawn LAST so it's always on top in SVG paint order ──
+  const nLen = Math.round(r * 0.80);
+  const nBack = 18;
+  // The group rotates around the gauge center.
+  // rotate(spdAngle(0), cx, cy) positions the needle at 0 km/h.
+  h += `<g id="spdNeedle" transform="rotate(${spdAngle(0)},${cx},${cy})">
+    <line x1="${cx}" y1="${cy+nBack}" x2="${cx}" y2="${cy-nLen}"
+      stroke="url(#nGrad)" stroke-width="3.5" stroke-linecap="round" filter="url(#glow)"/>
   </g>`;
 
-  // Hub
-  h += `<circle cx="${cx}" cy="${cy}" r="11" fill="url(#hubG)"/>
-  <circle cx="${cx}" cy="${cy}" r="4.5" fill="#f0d890"/>`;
+  // Hub cap — drawn after needle so it sits on top of needle base
+  h += `<circle cx="${cx}" cy="${cy}" r="12" fill="url(#hubSpd)"/>
+  <circle cx="${cx}" cy="${cy}" r="5" fill="#f8f0c0"/>`;
 
   svg.innerHTML = h;
 }
@@ -372,50 +374,67 @@ buildSpeedoSVG();
 function updateSpeed(mps) {
   const kmh = Math.round((mps || 0) * 3.6);
   document.getElementById('speedValue').textContent = kmh;
-  setNeedleAngle('spdNeedle', spdAngle(kmh), SPD_CX, SPD_CY);
+  rotateSvgGroup('spdNeedle', spdAngle(kmh), S.cx, S.cy);
 }
 
-// ═══════════════════════════════════════════════════════
-// ALTIMETER
-// Aviation style. 1 full rotation = 1000 m.
-// Dial: 0 at top, marks 0-9 (each = 100 m).
-// Needle angle = (alt / 1000) * 360, starting from -90° (12 o'clock = 0 m)
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// ALTIMETER — dual needle, ×10 m scale
+//
+// Dial: 10 divisions, each = 10 m → 1 full rotation = 100 m
+//   Long needle (orange): shows ×10 m  → rotates fast
+//   Short needle (blue/teal): shows ×100 m → rotates 10× slower
+//
+// Needle angle = (alt mod 100) / 100 * 360  for long
+//             = (alt / 100) * 360  (unclamped wraps) for short
+// Both start at 12 o'clock = 0.
+// ═══════════════════════════════════════════════════════════════
+const ALT_CX = 60, ALT_CY = 60, ALT_R = 52;
+
 function buildAltSVG() {
   const svg = document.getElementById('altSvg');
-  const cx = 60, cy = 60, r = 52;
+  const cx = ALT_CX, cy = ALT_CY, r = ALT_R;
   let h = '';
 
-  h += `<defs><radialGradient id="hubA" cx="40%" cy="35%"><stop offset="0%" stop-color="#e8d880"/><stop offset="100%" stop-color="#8b6914"/></radialGradient></defs>`;
+  h += `<defs>
+    <radialGradient id="hubAlt" cx="38%" cy="32%">
+      <stop offset="0%" stop-color="#f0e090"/>
+      <stop offset="100%" stop-color="#7a5010"/>
+    </radialGradient>
+  </defs>`;
+
   h += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#1a0d00"/>`;
   h += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#6b3a1f" stroke-width="2"/>`;
-  h += `<circle cx="${cx}" cy="${cy}" r="${r-3}" fill="none" stroke="#2a1005" stroke-width="1"/>`;
+  h += `<circle cx="${cx}" cy="${cy}" r="${r-3}" fill="none" stroke="#2a1005" stroke-width=".8"/>`;
 
-  // 10 major divisions (0–9, each 100 m), 50 minor ticks total
+  // 50 ticks (major every 5 = 10 m division)
   for (let i = 0; i < 50; i++) {
-    const isMajor = i % 5 === 0;
-    // needle at 0 m points UP (12 o'clock = -90° in standard, but rotate(0)=12 o'clock here)
-    // so tick at position i/50 of full circle, starting from 12 o'clock going CW
-    const ang = (i / 50) * 360 - 90; // standard math angle
-    const rad = ang * Math.PI / 180;
-    const r1 = r - 3, r2 = r1 - (isMajor ? 11 : 5);
-    const x1 = cx + r1 * Math.cos(rad), y1 = cy + r1 * Math.sin(rad);
-    const x2 = cx + r2 * Math.cos(rad), y2 = cy + r2 * Math.sin(rad);
-    h += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${isMajor ? '#c8a870' : '#6b3a1f'}" stroke-width="${isMajor ? 1.5 : .8}"/>`;
-    if (isMajor) {
-      const lr = r2 - 10;
-      const lx = cx + lr * Math.cos(rad), ly = cy + lr * Math.sin(rad);
-      h += `<text x="${lx.toFixed(1)}" y="${(ly + 3).toFixed(1)}" text-anchor="middle" fill="#a06030" font-size="8" font-family="Nixie One">${i / 5}</text>`;
+    const major = i % 5 === 0;
+    const ang = (i / 50) * 360; // 0 = 12 o'clock
+    const r1 = r - 3, r2 = r1 - (major ? 11 : 5);
+    const tp1 = pt(cx, cy, r1, ang), tp2 = pt(cx, cy, r2, ang);
+    h += `<line x1="${tp1.x.toFixed(1)}" y1="${tp1.y.toFixed(1)}" x2="${tp2.x.toFixed(1)}" y2="${tp2.y.toFixed(1)}" stroke="${major?'#c8a870':'#4a2810'}" stroke-width="${major?1.5:.7}"/>`;
+    if (major) {
+      const lp = pt(cx, cy, r2 - 9, ang);
+      h += `<text x="${lp.x.toFixed(1)}" y="${(lp.y+3).toFixed(1)}" text-anchor="middle" fill="#a06030" font-size="8" font-family="Nixie One">${i/5}</text>`;
     }
   }
 
-  // Needle (rotate(0) = pointing UP = 0 m)
-  h += `<g id="altNeedle" transform="rotate(0, ${cx}, ${cy})">
-    <line x1="${cx}" y1="${cy - r * 0.76}" x2="${cx}" y2="${cy + 12}" stroke="#ff9944" stroke-width="2.5" stroke-linecap="round"/>
+  // Short needle: ×100 m indicator (teal/blue-gray, shorter)
+  h += `<g id="altShortNeedle" transform="rotate(0,${cx},${cy})">
+    <line x1="${cx}" y1="${cy+8}" x2="${cx}" y2="${cy-r*0.50}"
+      stroke="#66cccc" stroke-width="2.2" stroke-linecap="round" opacity=".85"/>
   </g>`;
-  h += `<circle cx="${cx}" cy="${cy}" r="5" fill="url(#hubA)"/>
-  <circle cx="${cx}" cy="${cy}" r="2.5" fill="#f0d890"/>`;
-  h += `<text x="${cx}" y="${cy + 43}" text-anchor="middle" fill="#4a2510" font-size="6.5" font-family="Oswald" letter-spacing="1">×100m</text>`;
+
+  // Long needle: ×10 m (orange, full length)
+  h += `<g id="altLongNeedle" transform="rotate(0,${cx},${cy})">
+    <line x1="${cx}" y1="${cy+10}" x2="${cx}" y2="${cy-r*0.76}"
+      stroke="#ff9944" stroke-width="2.5" stroke-linecap="round"/>
+  </g>`;
+
+  // Hub
+  h += `<circle cx="${cx}" cy="${cy}" r="5" fill="url(#hubAlt)"/>
+  <circle cx="${cx}" cy="${cy}" r="2.2" fill="#f8f0c0"/>`;
+  h += `<text x="${cx}" y="${cy+43}" text-anchor="middle" fill="#3a1808" font-size="6" font-family="Oswald" letter-spacing="1">×10m</text>`;
 
   svg.innerHTML = h;
 }
@@ -425,28 +444,30 @@ function updateAlt(alt) {
   const m = alt !== null ? Math.round(alt) : null;
   document.getElementById('altDigital').textContent = m !== null ? m : '---';
   if (m !== null) {
-    // 1 rotation = 1000 m; rotate(0) = 12 o'clock = 0 m
-    const ang = (m / 1000) * 360;
-    setNeedleAngle('altNeedle', ang, 60, 60);
+    // Long needle: 1 rotation = 100 m (×10 scale, 10 divisions each = 10 m)
+    const longAng = (m / 100) * 360;
+    // Short needle: 1 rotation = 1000 m (10× slower)
+    const shortAng = (m / 1000) * 360;
+    rotateSvgGroup('altLongNeedle', longAng, ALT_CX, ALT_CY);
+    rotateSvgGroup('altShortNeedle', shortAng, ALT_CX, ALT_CY);
   }
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // VERTICAL SPEED INDICATOR
-// Range: ±500 m/min
-// Layout: 0 at top (12 o'clock), +500 (climb) spreads left (CCW), -500 spreads right (CW)
-// Span: 270° total (±135° from 12 o'clock)
-// Labels: ×10 m/min → show ±1,±2,±3,±4,±5
-// needle angle = -(vs / 500) * 135   (negative = CW = descent)
-// ═══════════════════════════════════════════════════════
+// ×10 m/min scale. Dial: 0 at top.
+//   +n (climb) → CCW (left side, green)
+//   -n (descent) → CW (right side, red)
+// Major marks at 0, ±1, ±2, ±3, ±4, ±5 (each = 10 m/min)
+// Total span: ±150° from top (300° total, matches ±5 labels).
+// Needle is UNCLAMPED: beyond ±50 m/min it keeps rotating past the scale.
+// ═══════════════════════════════════════════════════════════════
 const VS_CX = 60, VS_CY = 60, VS_R = 52;
-const VS_MAX = 500; // m/min
-const VS_SPAN_HALF = 135; // degrees each side
+const VS_DEG_PER_10 = 30; // 30° per 10 m/min division → ±5 = ±150°
 
-function vsAngle(vsMpm) {
-  // climb (positive) → CCW → negative rotation
-  // descent (negative) → CW → positive rotation
-  return -(Math.max(-VS_MAX, Math.min(VS_MAX, vsMpm)) / VS_MAX) * VS_SPAN_HALF;
+function vsAngle(mpm) {
+  // climb = CCW = negative angle from 12 o'clock
+  return -(mpm / 10) * VS_DEG_PER_10;
 }
 
 function buildVSSVG() {
@@ -454,93 +475,105 @@ function buildVSSVG() {
   const cx = VS_CX, cy = VS_CY, r = VS_R;
   let h = '';
 
-  h += `<defs><radialGradient id="hubV" cx="40%" cy="35%"><stop offset="0%" stop-color="#e8d880"/><stop offset="100%" stop-color="#8b6914"/></radialGradient></defs>`;
+  h += `<defs>
+    <radialGradient id="hubVS" cx="38%" cy="32%">
+      <stop offset="0%" stop-color="#f0e090"/>
+      <stop offset="100%" stop-color="#7a5010"/>
+    </radialGradient>
+  </defs>`;
+
   h += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#1a0d00"/>`;
   h += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#6b3a1f" stroke-width="2"/>`;
-  h += `<circle cx="${cx}" cy="${cy}" r="${r-3}" fill="none" stroke="#2a1005" stroke-width="1"/>`;
+  h += `<circle cx="${cx}" cy="${cy}" r="${r-3}" fill="none" stroke="#2a1005" stroke-width=".8"/>`;
 
-  // Major labels at 0, ±1, ±2, ±3, ±4, ±5 (×100 m/min)
-  // +values (climb) are CCW from top, -values (descent) are CW from top
-  const majorVs = [500, 400, 300, 200, 100, 0, -100, -200, -300, -400, -500];
-  majorVs.forEach(v => {
-    const ang = vsAngle(v); // needle angle (0=up)
-    // convert to coordinate angle for tick mark
-    const coordRad = (ang - 90) * Math.PI / 180;
+  // Major ticks: 0, ±1, ±2, ±3, ±4, ±5 (×10 m/min)
+  const majors = [0, 1, 2, 3, 4, 5, -1, -2, -3, -4, -5];
+  majors.forEach(v => {
+    const ang = vsAngle(v * 10);
     const r1 = r - 3, r2 = r1 - 11;
-    const x1 = cx + r1 * Math.cos(coordRad), y1 = cy + r1 * Math.sin(coordRad);
-    const x2 = cx + r2 * Math.cos(coordRad), y2 = cy + r2 * Math.sin(coordRad);
-    const col = v > 0 ? '#33dd00' : v < 0 ? '#ff6644' : '#c8a870';
-    h += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="1.5"/>`;
-    if (v % 100 === 0) {
-      const lr = r2 - 10;
-      const lx = cx + lr * Math.cos(coordRad), ly = cy + lr * Math.sin(coordRad);
-      const label = v === 0 ? '0' : `${v > 0 ? '+' : ''}${v / 100}`;
-      h += `<text x="${lx.toFixed(1)}" y="${(ly + 3).toFixed(1)}" text-anchor="middle" fill="${col}" font-size="7.5" font-family="Nixie One">${label}</text>`;
-    }
+    const tp1 = pt(cx, cy, r1, ang), tp2 = pt(cx, cy, r2, ang);
+    const col = v > 0 ? '#33ee00' : v < 0 ? '#ff6644' : '#c8a870';
+    h += `<line x1="${tp1.x.toFixed(1)}" y1="${tp1.y.toFixed(1)}" x2="${tp2.x.toFixed(1)}" y2="${tp2.y.toFixed(1)}" stroke="${col}" stroke-width="1.5"/>`;
+    const lp = pt(cx, cy, r2 - 9, ang);
+    const label = v === 0 ? '0' : `${v > 0 ? '+' : ''}${v}`;
+    h += `<text x="${lp.x.toFixed(1)}" y="${(lp.y+3).toFixed(1)}" text-anchor="middle" fill="${col}" font-size="7.5" font-family="Nixie One">${label}</text>`;
   });
 
-  // Minor ticks every 50 m/min
-  for (let v = -500; v <= 500; v += 50) {
-    if (majorVs.includes(v)) continue;
-    const ang = vsAngle(v);
-    const coordRad = (ang - 90) * Math.PI / 180;
+  // Minor ticks every 5 m/min between majors
+  for (let v10 = -50; v10 <= 50; v10 += 5) {
+    if (v10 % 10 === 0) continue; // skip majors
+    const ang = vsAngle(v10);
     const r1 = r - 3, r2 = r1 - 5;
-    const x1 = cx + r1 * Math.cos(coordRad), y1 = cy + r1 * Math.sin(coordRad);
-    const x2 = cx + r2 * Math.cos(coordRad), y2 = cy + r2 * Math.sin(coordRad);
-    h += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#6b3a1f" stroke-width=".8"/>`;
+    const tp1 = pt(cx, cy, r1, ang), tp2 = pt(cx, cy, r2, ang);
+    h += `<line x1="${tp1.x.toFixed(1)}" y1="${tp1.y.toFixed(1)}" x2="${tp2.x.toFixed(1)}" y2="${tp2.y.toFixed(1)}" stroke="#5a3020" stroke-width=".8"/>`;
   }
 
-  // Color arcs (subtle)
-  const arcPath = (v1, v2, col, rr) => {
-    const a1r = (vsAngle(v1) - 90) * Math.PI / 180;
-    const a2r = (vsAngle(v2) - 90) * Math.PI / 180;
-    const x1 = cx + rr * Math.cos(a1r), y1 = cy + rr * Math.sin(a1r);
-    const x2 = cx + rr * Math.cos(a2r), y2 = cy + rr * Math.sin(a2r);
-    // sweep: CW=1, CCW=0. Climb goes CCW (v increases → angle decreases → CCW)
-    const sweep = v2 < v1 ? 0 : 1;
-    return `<path d="M${x1.toFixed(2)},${y1.toFixed(2)} A${rr},${rr} 0 0,${sweep} ${x2.toFixed(2)},${y2.toFixed(2)}" fill="none" stroke="${col}" stroke-width="3" opacity=".25"/>`;
+  // Color arcs
+  // Climb arc: 0 → +50 m/min = 0° → -150° (CCW)
+  const arcP = (v1, v2, col, rr) => {
+    const a1 = vsAngle(v1), a2 = vsAngle(v2);
+    const tp1 = pt(cx, cy, rr, a1), tp2 = pt(cx, cy, rr, a2);
+    const dAngle = a2 - a1;
+    const large = Math.abs(dAngle) > 180 ? 1 : 0;
+    const sweep = dAngle > 0 ? 1 : 0; // 1=CW
+    return `<path d="M${tp1.x.toFixed(2)},${tp1.y.toFixed(2)} A${rr},${rr} 0 ${large},${sweep} ${tp2.x.toFixed(2)},${tp2.y.toFixed(2)}" fill="none" stroke="${col}" stroke-width="3" opacity=".25"/>`;
   };
-  h += arcPath(0, 500, '#33ff00', r - 10);
-  h += arcPath(-500, 0, '#ff6644', r - 10);
+  h += arcP(0, 50, '#33ff00', r - 10);   // climb: CW or CCW?
+  h += arcP(-50, 0, '#ff6644', r - 10);
 
-  // Needle
-  h += `<g id="vsNeedle" transform="rotate(0, ${cx}, ${cy})">
-    <line x1="${cx}" y1="${cx - r * 0.76}" x2="${cx}" y2="${cy + 12}" stroke="#ff9944" stroke-width="2.5" stroke-linecap="round"/>
+  // Scale label
+  h += `<text x="${cx}" y="${cy+43}" text-anchor="middle" fill="#3a1808" font-size="6" font-family="Oswald" letter-spacing="1">×10m/min</text>`;
+
+  // Needle — drawn last = on top
+  h += `<g id="vsNeedle" transform="rotate(0,${cx},${cy})">
+    <line x1="${cx}" y1="${cy+10}" x2="${cx}" y2="${cy-r*0.76}"
+      stroke="#ff9944" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="${cx}" y1="${cx+10}" x2="${cx}" y2="${cy+10}"
+      stroke="#994400" stroke-width="1.5" stroke-linecap="round" opacity=".6"/>
   </g>`;
-  h += `<circle cx="${cx}" cy="${cy}" r="5" fill="url(#hubV)"/>
-  <circle cx="${cx}" cy="${cy}" r="2.5" fill="#f0d890"/>`;
-  h += `<text x="${cx}" y="${cy + 43}" text-anchor="middle" fill="#4a2510" font-size="6" font-family="Oswald" letter-spacing="1">×100m/min</text>`;
+
+  // Hub
+  h += `<circle cx="${cx}" cy="${cy}" r="5" fill="url(#hubVS)"/>
+  <circle cx="${cx}" cy="${cy}" r="2.2" fill="#f8f0c0"/>`;
 
   svg.innerHTML = h;
 }
 buildVSSVG();
 
-let lastAlt = null, lastAltTime = null, lastVsMpm = 0;
+let lastAlt = null, lastAltTime = null, smoothedVs = 0;
 
 function updateVS(alt) {
   const now = Date.now();
   if (alt !== null) {
     if (lastAlt !== null && lastAltTime !== null) {
-      const dt = (now - lastAltTime) / 60000; // minutes
-      if (dt >= 0.05) { // update every ~3s
-        lastVsMpm = (alt - lastAlt) / dt;
-        lastAlt = alt; lastAltTime = now;
+      const dt = (now - lastAltTime) / 60000;
+      if (dt >= 0.04) { // ~2.4s minimum
+        const rawVs = (alt - lastAlt) / dt;
+        // Light smoothing to avoid GPS noise spikes
+        smoothedVs = smoothedVs * 0.6 + rawVs * 0.4;
+        lastAlt = alt;
+        lastAltTime = now;
       }
     } else {
-      lastAlt = alt; lastAltTime = now;
+      lastAlt = alt;
+      lastAltTime = now;
+      smoothedVs = 0;
     }
-    setNeedleAngle('vsNeedle', vsAngle(lastVsMpm), VS_CX, VS_CY);
-    document.getElementById('vsDigital').textContent = Math.round(lastVsMpm);
+
+    // Needle rotates freely — NO clamp. Beyond ±50 m/min it wraps past scale labels.
+    rotateSvgGroup('vsNeedle', vsAngle(smoothedVs), VS_CX, VS_CY);
+    document.getElementById('vsDigital').textContent = Math.round(smoothedVs);
+
     const arrow = document.getElementById('vsArrow');
-    if (lastVsMpm > 10)       { arrow.textContent = '↑'; arrow.className = 'vs-arrow up'; }
-    else if (lastVsMpm < -10) { arrow.textContent = '↓'; arrow.className = 'vs-arrow down'; }
-    else                      { arrow.textContent = '→'; arrow.className = 'vs-arrow flat'; }
+    if (smoothedVs > 5)       { arrow.textContent='↑'; arrow.className='vs-arrow up'; }
+    else if (smoothedVs < -5) { arrow.textContent='↓'; arrow.className='vs-arrow down'; }
+    else                      { arrow.textContent='→'; arrow.className='vs-arrow flat'; }
   }
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // COMPASS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 function updateHeading(h) {
   if (h === null || h === undefined) return;
   const deg = Math.round(h);
@@ -550,37 +583,31 @@ function updateHeading(h) {
   document.getElementById('compassSvg').style.transform = `rotate(${-deg}deg)`;
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // ACCURACY LAMPS
-// 6 lamps in a row: [0]=red, [1]=amber, [2]=amber, [3]=green, [4]=green, [5]=green
-// Full precision → all 6 lit. Precision degrades → lamps go out from RIGHT to LEFT.
-// ═══════════════════════════════════════════════════════
-const LAMP_COLORS = ['red', 'amber', 'amber', 'green', 'green', 'green'];
+// [0]=red, [1,2]=amber, [3,4,5]=green
+// Full accuracy → all 6 lit; degrades → lamps go out right to left
+// ═══════════════════════════════════════════════════════════════
+const LAMP_COLORS = ['red','amber','amber','green','green','green'];
 
 function updateAccLamps(acc) {
-  let litCount;
-  if (!acc)        litCount = 0;
-  else if (acc <=  3) litCount = 6;
-  else if (acc <=  5) litCount = 5;
-  else if (acc <= 10) litCount = 4;
-  else if (acc <= 20) litCount = 3;
-  else if (acc <= 50) litCount = 2;
-  else if (acc <=100) litCount = 1;
-  else                litCount = 0;
-
+  let litCount = 0;
+  if      (!acc)       litCount = 0;
+  else if (acc <=  3)  litCount = 6;
+  else if (acc <=  5)  litCount = 5;
+  else if (acc <= 10)  litCount = 4;
+  else if (acc <= 20)  litCount = 3;
+  else if (acc <= 50)  litCount = 2;
+  else if (acc <= 100) litCount = 1;
   for (let i = 0; i < 6; i++) {
-    const el = document.getElementById(`lmp${i}`);
-    if (i < litCount) {
-      el.className = `lamp lit-${LAMP_COLORS[i]}`;
-    } else {
-      el.className = 'lamp';
-    }
+    document.getElementById(`lmp${i}`).className =
+      'lamp' + (i < litCount ? ` lit-${LAMP_COLORS[i]}` : '');
   }
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // POSITION
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 function updatePosition(lat, lon, alt, acc) {
   document.getElementById('latValue').textContent = `LAT ${lat.toFixed(4)}`;
   document.getElementById('lonValue').textContent = `LON ${lon.toFixed(4)}`;
@@ -594,26 +621,26 @@ function updatePosition(lat, lon, alt, acc) {
   updateAccLamps(acc);
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // CLOCK
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 function updateClock() {
   const now = new Date();
   document.getElementById('timeValue').textContent =
-    String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
   const days = ['日','月','火','水','木','金','土'];
   document.getElementById('dateValue').textContent =
     `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日(${days[now.getDay()]})`;
   const s = now.getSeconds();
   document.getElementById('secArc').style.strokeDashoffset = 175.9 * (1 - s / 60);
-  document.getElementById('secText').textContent = String(s).padStart(2, '0');
+  document.getElementById('secText').textContent = String(s).padStart(2,'0');
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // GPS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 function initGPS() {
   document.getElementById('permOverlay').style.display = 'none';
   if (!navigator.geolocation) {
@@ -623,7 +650,7 @@ function initGPS() {
   document.getElementById('gpsText').textContent = '取得中...';
   navigator.geolocation.watchPosition(
     pos => {
-      const { latitude: lat, longitude: lon, altitude: alt, accuracy: acc, speed, heading } = pos.coords;
+      const { latitude:lat, longitude:lon, altitude:alt, accuracy:acc, speed, heading } = pos.coords;
       document.getElementById('gpsDot').className = 'gps-dot connected';
       document.getElementById('gpsText').textContent = 'GPS受信中';
       updateSpeed(speed || 0);
@@ -634,13 +661,12 @@ function initGPS() {
       document.getElementById('gpsDot').className = 'gps-dot';
       document.getElementById('gpsText').textContent = 'エラー';
     },
-    { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 }
+    { enableHighAccuracy:true, maximumAge:1000, timeout:15000 }
   );
 }
 
-// Service Worker
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./sw.js', { scope:'./' }).catch(()=>{});
 }
 </script>
 </body>
