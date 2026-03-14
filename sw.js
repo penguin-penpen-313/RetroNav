@@ -1,4 +1,4 @@
-const CACHE_NAME = 'retronav-v1';
+const CACHE_NAME = 'retronav-v2';
 const ASSETS = [
   './',
   './index.html',
