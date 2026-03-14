@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RetroNav">
+<meta name="theme-color" content="#1a0d00">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>RetroNav Mk.II</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Oswald:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --wood-dark: #3d1f0a;
+    --wood-mid: #6b3a1f;
+    --wood-light: #a0622a;
+    --wood-highlight: #c8844e;
+    --chrome: #c8b89a;
+    --chrome-shine: #f0e8d8;
+    --amber: #ffb347;
+    --amber-glow: #ff8c00;
+    --amber-dim: #994d00;
+    --green-glow: #39ff14;
+    --cream: #f5e6c8;
+  }
+
+  html, body {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    background: #0a0a0a;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    font-family: 'Oswald', sans-serif;
+  }
+
+  .dashboard {
+    width: 100%;
+    max-width: 430px;
+    height: 100dvh;
+    background:
+      repeating-linear-gradient(92deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px),
+      repeating-linear-gradient(180deg, transparent, transparent 8px, rgba(0,0,0,0.04) 8px, rgba(0,0,0,0.04) 9px),
+      linear-gradient(160deg, #5c2e0a 0%, #8b4513 15%, #6b3010 30%, #a0522d 45%, #7a3b18 55%, #c8722a 70%, #8b4513 85%, #4a1e08 100%);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .dashboard::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      175deg,
+      transparent 0px, transparent 3px,
+      rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px,
+      transparent 4px, transparent 10px,
+      rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 11px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .dashboard::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(255,255,255,0.08) 0%, transparent 40%, rgba(0,0,0,0.15) 70%, rgba(255,255,255,0.04) 100%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .scanline {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .chrome-strip {
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(180deg, #e8dcc8 0%, #f5ede0 30%, #c8b89a 60%, #a09070 100%);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.6);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  /* Scrollable content area */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    z-index: 10;
+    scrollbar-width: none;
+  }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 14px env(safe-area-inset-bottom, 20px);
+    gap: 12px;
+  }
+
+  .brand-badge {
+    background: linear-gradient(145deg, #c8a870, #8b6914, #d4b484, #7a5c10);
+    border-radius: 4px;
+    padding: 5px 20px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(0,0,0,0.3);
+    border: 1px solid #a08040;
+  }
+  .brand-badge span {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #1a0d00;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+  }
+
+  .rivets {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0 4px;
+  }
+
+  .rivet {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #e8dcc8, #8b7050, #4a3020);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+
+  /* GPS status */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0 4px;
+  }
+  .gps-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    color: var(--amber-dim);
+    text-transform: uppercase;
+  }
+  .gps-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #994d00;
+    animation: blink 2s infinite;
+  }
+  .gps-dot.connected {
+    background: #39ff14;
+    box-shadow: 0 0 8px #00ff00;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.3);opacity:0.7} }
+
+  .coord-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    color: var(--amber-dim);
+    letter-spacing: 1px;
+  }
+
+  /* Speedometer */
+  .speedo-container {
+    position: relative;
+    width: min(280px, 72vw);
+    height: min(280px, 72vw);
+  }
+
+  .speedo-ring {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #2a1505, #1a0d00);
+    box-shadow:
+      0 0 0 3px #6b3a1f,
+      0 0 0 6px #3d1f0a,
+      0 0 0 8px #c8b89a,
+      0 0 0 10px #8b6914,
+      0 8px 32px rgba(0,0,0,0.8),
+      inset 0 0 40px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .speedo-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .speedo-center {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    z-index: 5;
+  }
+
+  .speed-value {
+    font-family: 'Orbitron', monospace;
+    font-size: min(64px, 16vw);
+    font-weight: 900;
+    color: var(--amber);
+    text-shadow: 0 0 10px var(--amber-glow), 0 0 30px rgba(255,140,0,0.4);
+    line-height: 1;
+    letter-spacing: -2px;
+  }
+
+  .speed-unit {
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--amber-dim);
+    letter-spacing: 3px;
+  }
+
+  .needle-wrap {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0; left: 0;
+    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    transform-origin: center center;
+    z-index: 6;
+  }
+
+  .needle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 39%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent 0%, #ff4400 30%, #ff9944 100%);
+    border-radius: 2px;
+    transform-origin: 8px 1.5px;
+    transform: translateY(-1.5px) translateX(-8px);
+    box-shadow: 0 0 8px rgba(255,100,0,0.8);
+  }
+
+  .needle-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #c8a860, #8b6914);
+    box-shadow: 0 0 0 2px #3d1f0a, 0 2px 6px rgba(0,0,0,0.6);
+    z-index: 10;
+  }
+
+  /* Cards */
+  .card {
+    width: 100%;
+    background: linear-gradient(145deg, #1a0d00, #2a1505);
+    border-radius: 12px;
+    border: 1px solid #6b3a1f;
+    box-shadow: 0 0 0 2px #3d1f0a, inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 16px rgba(0,0,0,0.5);
+    padding: 12px 16px;
+  }
+
+  .card-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    color: var(--amber-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* Compass */
+  .compass-display {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .compass-rose {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+  }
+
+  .compass-rose svg {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.4s ease;
+  }
+
+  .compass-info {
+    flex: 1;
+  }
+
+  .direction-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 38px;
+    font-weight: 900;
+    color: var(--amber);
+    text-shadow: 0 0 10px rgba(255,140,0,0.5);
+    line-height: 1;
+  }
+
+  .direction-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cream);
+    letter-spacing: 3px;
+    margin-top: 4px;
+  }
+
+  .dot-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .dot-row {
+    display: flex;
+    gap: 5px;
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2a1505;
+    border: 1px solid #4a2510;
+    transition: all 0.3s ease;
+  }
+  .dot.active {
+    background: var(--amber);
+    border-color: var(--amber-glow);
+    box-shadow: 0 0 6px var(--amber-glow);
+  }
+  .dot.green.active {
+    background: #39ff14;
+    border-color: #00cc00;
+    box-shadow: 0 0 6px #00ff00;
+  }
+
+  /* Info grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .info-card {
+    background: linear-gradient(145deg, #1a0d00, #2a1505);
+    border-radius: 10px;
+    border: 1px solid #6b3a1f;
+    box-shadow: 0 0 0 2px #3d1f0a, inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.4);
+    padding: 10px 12px;
+  }
+
+  .info-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--amber);
+    text-shadow: 0 0 8px rgba(255,140,0,0.4);
+    line-height: 1;
+    margin-top: 2px;
+  }
+
+  .sub-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    color: var(--amber-dim);
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  .acc-bar {
+    height: 3px;
+    background: #2a1505;
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+
+  .acc-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #994d00, var(--amber));
+    border-radius: 2px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 6px rgba(255,140,0,0.5);
+  }
+
+  /* Clock */
+  .clock-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .time-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 44px;
+    font-weight: 900;
+    color: var(--amber);
+    text-shadow: 0 0 10px var(--amber-glow), 0 0 25px rgba(255,140,0,0.3);
+    line-height: 1;
+    letter-spacing: 2px;
+  }
+
+  .date-value {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--amber-dim);
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+
+  /* Permission overlay */
+  .perm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,5,0,0.97);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 40px 30px;
+  }
+
+  .perm-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--amber);
+    text-align: center;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(255,140,0,0.5);
+  }
+
+  .perm-text {
+    font-size: 14px;
+    color: var(--cream);
+    text-align: center;
+    line-height: 1.8;
+    opacity: 0.8;
+  }
+
+  .perm-btn {
+    background: linear-gradient(145deg, #c8a870, #8b6914, #d4b484);
+    border: none;
+    border-radius: 8px;
+    padding: 14px 36px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    color: #1a0d00;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+    text-transform: uppercase;
+  }
+  .perm-btn:active { transform: scale(0.97); }
+</style>
+</head>
+<body>
+
+<div class="perm-overlay" id="permOverlay">
+  <div class="brand-badge"><span>RetroNav Mk.II</span></div>
+  <div class="perm-title">GPS信号を検出中</div>
+  <div class="perm-text">
+    現在地の情報を使用して<br>速度・方角・位置を表示します。<br><br>
+    「許可」を選択してください。
+  </div>
+  <button class="perm-btn" onclick="initGPS()">エンジン始動</button>
+</div>
+
+<div class="dashboard">
+  <div class="scanline"></div>
+  <div class="chrome-strip"></div>
+
+  <div class="scroll-area">
+    <div class="content">
+
+      <div class="rivets">
+        <div class="rivet"></div>
+        <div class="brand-badge"><span>RetroNav Mk.II</span></div>
+        <div class="rivet"></div>
+      </div>
+
+      <div class="status-bar">
+        <div class="gps-status">
+          <div class="gps-dot" id="gpsDot"></div>
+          <span id="gpsText">待機中</span>
+        </div>
+        <div class="coord-value" id="coordDisplay">--°-- --°--</div>
+      </div>
+
+      <!-- Speedometer -->
+      <div class="speedo-container">
+        <div class="speedo-ring">
+          <svg class="speedo-svg" viewBox="0 0 280 280" id="speedoSvg"></svg>
+          <div class="speedo-center">
+            <div class="speed-value" id="speedValue">0</div>
+            <div class="speed-unit">km/h</div>
+          </div>
+          <div class="needle-wrap" id="needleWrap">
+            <div class="needle"></div>
+          </div>
+          <div class="needle-dot"></div>
+        </div>
+      </div>
+
+      <!-- Compass -->
+      <div class="card">
+        <div class="card-label">方位コンパス</div>
+        <div class="compass-display">
+          <div class="compass-rose">
+            <svg viewBox="0 0 80 80" id="compassSvg">
+              <circle cx="40" cy="40" r="38" fill="none" stroke="#6b3a1f" stroke-width="1.5"/>
+              <circle cx="40" cy="40" r="36" fill="none" stroke="#3d1f0a" stroke-width="1"/>
+              <g stroke="#994d00" stroke-width="1">
+                <line x1="40" y1="4" x2="40" y2="10"/>
+                <line x1="76" y1="40" x2="70" y2="40"/>
+                <line x1="40" y1="76" x2="40" y2="70"/>
+                <line x1="4" y1="40" x2="10" y2="40"/>
+              </g>
+              <text x="40" y="18" text-anchor="middle" fill="#ffb347" font-size="9" font-family="Orbitron" font-weight="700">N</text>
+              <text x="40" y="68" text-anchor="middle" fill="#994d00" font-size="7" font-family="Orbitron">S</text>
+              <text x="68" y="43" text-anchor="middle" fill="#994d00" font-size="7" font-family="Orbitron">E</text>
+              <text x="12" y="43" text-anchor="middle" fill="#994d00" font-size="7" font-family="Orbitron">W</text>
+              <polygon points="40,12 43,40 40,46 37,40" fill="#ff3c00" opacity="0.9"/>
+              <polygon points="40,68 43,40 40,46 37,40" fill="#994d00" opacity="0.6"/>
+              <circle cx="40" cy="40" r="4" fill="#c8a870"/>
+            </svg>
+          </div>
+          <div class="compass-info">
+            <div class="direction-value" id="headingValue">---</div>
+            <div class="direction-name" id="directionName">-- · --</div>
+          </div>
+          <div class="dot-grid">
+            <div class="dot-row">
+              <div class="dot green" id="d0"></div>
+              <div class="dot green" id="d1"></div>
+              <div class="dot green" id="d2"></div>
+            </div>
+            <div class="dot-row">
+              <div class="dot green" id="d3"></div>
+              <div class="dot green" id="d4"></div>
+              <div class="dot green" id="d5"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info grid -->
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="card-label">高度</div>
+          <div class="info-value" id="altValue">---</div>
+          <div class="sub-text">METERS</div>
+          <div class="acc-bar"><div class="acc-fill" id="accFill" style="width:0%"></div></div>
+        </div>
+        <div class="info-card">
+          <div class="card-label">GPS精度</div>
+          <div class="info-value" id="accValue">±--</div>
+          <div class="sub-text" id="latValue">LAT ------</div>
+          <div class="sub-text" id="lonValue">LON ------</div>
+        </div>
+      </div>
+
+      <!-- Clock -->
+      <div class="card">
+        <div class="card-label">現在時刻</div>
+        <div class="clock-inner">
+          <div>
+            <div class="time-value" id="timeValue">--:--</div>
+            <div class="date-value" id="dateValue">---- -- --</div>
+          </div>
+          <div class="dot-grid">
+            <div class="dot-row">
+              <div class="dot" id="s0"></div>
+              <div class="dot" id="s1"></div>
+              <div class="dot" id="s2"></div>
+            </div>
+            <div class="dot-row">
+              <div class="dot" id="s3"></div>
+              <div class="dot" id="s4"></div>
+              <div class="dot" id="s5"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rivets" style="padding-bottom: 4px;">
+        <div class="rivet"></div>
+        <div class="rivet"></div>
+        <div class="rivet"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// Build speedometer SVG
+function buildSpeedo() {
+  const svg = document.getElementById('speedoSvg');
+  const cx = 140, cy = 140, r = 120;
+  const startAngle = -220, endAngle = 40, maxSpeed = 180;
+  let html = '';
+
+  function polar(cx, cy, r, a) {
+    const rad = a * Math.PI / 180;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  }
+
+  function arc(cx, cy, r, a1, a2) {
+    const s = polar(cx, cy, r, a2);
+    const e = polar(cx, cy, r, a1);
+    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${a2 - a1 <= 180 ? 0 : 1} 0 ${e.x} ${e.y}`;
+  }
+
+  html += `<path d="${arc(cx,cy,r,startAngle,endAngle)}" fill="none" stroke="#2a1505" stroke-width="8"/>`;
+
+  for (let i = 0; i <= 18; i++) {
+    const speed = i * 10;
+    const angle = startAngle + (speed / maxSpeed) * (endAngle - startAngle);
+    const rad = angle * Math.PI / 180;
+    const isMajor = i % 3 === 0;
+    const len = isMajor ? 16 : 8;
+    const r1 = r - 6, r2 = r1 - len;
+    const x1 = cx + r1 * Math.cos(rad), y1 = cy + r1 * Math.sin(rad);
+    const x2 = cx + r2 * Math.cos(rad), y2 = cy + r2 * Math.sin(rad);
+    html += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${isMajor ? '#c8a870' : '#6b3a1f'}" stroke-width="${isMajor ? 2 : 1}"/>`;
+    if (isMajor) {
+      const lr = r2 - 16;
+      const lx = cx + lr * Math.cos(rad), ly = cy + lr * Math.sin(rad);
+      html += `<text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" text-anchor="middle" fill="#994d00" font-size="12" font-family="Orbitron">${speed}</text>`;
+    }
+  }
+
+  for (let s = 140; s <= 175; s += 5) {
+    const a1 = startAngle + (s / maxSpeed) * (endAngle - startAngle);
+    const a2 = startAngle + (Math.min(s+5,180) / maxSpeed) * (endAngle - startAngle);
+    html += `<path d="${arc(cx,cy,r-10,a1,a2)}" fill="none" stroke="rgba(255,50,0,0.3)" stroke-width="4"/>`;
+  }
+
+  svg.innerHTML = html;
+}
+buildSpeedo();
+
+function updateSpeed(mps) {
+  const kmh = Math.round((mps || 0) * 3.6);
+  document.getElementById('speedValue').textContent = kmh;
+  const ratio = Math.min(kmh / 180, 1);
+  const angle = -220 + ratio * 260;
+  document.getElementById('needleWrap').style.transform = `rotate(${angle + 90}deg)`;
+}
+
+function updateHeading(h) {
+  if (h === null || h === undefined) return;
+  const deg = Math.round(h);
+  document.getElementById('headingValue').textContent = deg + '°';
+  const dirs = ['北 N','北東 NE','東 E','南東 SE','南 S','南西 SW','西 W','北西 NW'];
+  document.getElementById('directionName').textContent = dirs[Math.round(deg / 45) % 8];
+  document.getElementById('compassSvg').style.transform = `rotate(${-deg}deg)`;
+  const on = Math.round((deg / 360) * 6);
+  ['d0','d1','d2','d3','d4','d5'].forEach((id, i) => {
+    document.getElementById(id).className = 'dot green' + (i < on ? ' active' : '');
+  });
+}
+
+function updatePosition(lat, lon, alt, acc) {
+  document.getElementById('latValue').textContent = `LAT ${lat.toFixed(4)}`;
+  document.getElementById('lonValue').textContent = `LON ${lon.toFixed(4)}`;
+  document.getElementById('altValue').textContent = alt !== null ? Math.round(alt) : '---';
+  document.getElementById('accValue').textContent = acc ? `±${Math.round(acc)}` : '±--';
+  document.getElementById('accFill').style.width = acc ? Math.max(0, 100 - Math.min(acc, 100)) + '%' : '0%';
+  const latDir = lat >= 0 ? 'N' : 'S';
+  const lonDir = lon >= 0 ? 'E' : 'W';
+  document.getElementById('coordDisplay').textContent =
+    `${Math.abs(lat).toFixed(3)}°${latDir} ${Math.abs(lon).toFixed(3)}°${lonDir}`;
+}
+
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('timeValue').textContent = `${h}:${m}`;
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('dateValue').textContent =
+    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日(${days[now.getDay()]})`;
+  const on = Math.floor(now.getSeconds() / 10);
+  ['s0','s1','s2','s3','s4','s5'].forEach((id,i) => {
+    document.getElementById(id).className = 'dot' + (i <= on ? ' active' : '');
+  });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function initGPS() {
+  document.getElementById('permOverlay').style.display = 'none';
+  if (!navigator.geolocation) {
+    document.getElementById('gpsText').textContent = '非対応';
+    return;
+  }
+  document.getElementById('gpsText').textContent = '取得中...';
+  navigator.geolocation.watchPosition(
+    pos => {
+      const { latitude, longitude, altitude, accuracy, speed, heading } = pos.coords;
+      document.getElementById('gpsDot').className = 'gps-dot connected';
+      document.getElementById('gpsText').textContent = 'GPS受信中';
+      updateSpeed(speed || 0);
+      updateHeading(heading);
+      updatePosition(latitude, longitude, altitude, accuracy);
+    },
+    err => {
+      document.getElementById('gpsDot').className = 'gps-dot';
+      document.getElementById('gpsText').textContent = 'エラー';
+    },
+    { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 }
+  );
+}
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  // GitHub Pages対応: 相対パスで登録することでサブパスでも動作
+  navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+}
+</script>
+</body>
+</html>
