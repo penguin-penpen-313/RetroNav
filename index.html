@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -9,689 +9,945 @@
 <meta name="theme-color" content="#1a0d00">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>RetroNav Mk.02</title>
+<title>RetroNav Mk.03</title>
 <link href="https://fonts.googleapis.com/css2?family=Nixie+One&family=Orbitron:wght@400;700;900&family=Oswald:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  :root{
-    --amber:#ffb347;--amber-glow:#ff8c00;--amber-dim:#994d00;
-    --nixie:#ff9933;--nixie-glow:#ff6600;--cream:#f5e6c8;
+:root {
+  --wood1:#5c2e0a; --wood2:#8b4513; --wood3:#a0522d; --wood4:#c8722a;
+  --amber:#ffb347; --amber-glow:#ff8c00; --amber-dim:#7a3d00;
+  --nixie:#ff9933; --nixie-glow:#ff6000;
+  --cream:#f5e6c8; --dark:#1a0d00; --dark2:#2a1505;
+  --border:#6b3a1f; --border2:#3d1f0a;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  width:100%; height:100%;
+  overflow:hidden;
+  background:#000;
+  font-family:'Oswald', sans-serif;
+}
+
+/* ─── Wood background ─── */
+.dashboard {
+  width:100%; height:100%;
+  height: 100dvh;
+  background:
+    repeating-linear-gradient(92deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px),
+    repeating-linear-gradient(180deg,transparent,transparent 8px,rgba(0,0,0,.04) 8px,rgba(0,0,0,.04) 9px),
+    linear-gradient(160deg,var(--wood1) 0%,var(--wood2) 15%,#6b3010 30%,var(--wood3) 45%,#7a3b18 55%,var(--wood4) 70%,var(--wood2) 85%,#4a1e08 100%);
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.dashboard::before {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:1;
+  background:repeating-linear-gradient(175deg,
+    transparent 0,transparent 3px,rgba(0,0,0,.07) 3px,rgba(0,0,0,.07) 4px,
+    transparent 4px,transparent 10px,rgba(255,255,255,.025) 10px,rgba(255,255,255,.025) 11px);
+}
+.dashboard::after {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:2;
+  background:linear-gradient(120deg,rgba(255,255,255,.07) 0%,transparent 40%,rgba(0,0,0,.12) 70%,rgba(255,255,255,.03) 100%);
+}
+.scanline {
+  position:absolute; inset:0; z-index:3; pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.035) 3px,rgba(0,0,0,.035) 4px);
+}
+
+/* ─── Chrome top strip ─── */
+.chrome-top {
+  height:5px; flex-shrink:0; z-index:10; position:relative;
+  background:linear-gradient(180deg,#e8dcc8,#f5ede0 30%,#c8b89a 60%,#a09070);
+  box-shadow:0 2px 6px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.5);
+  margin-top: var(--safe-top);
+}
+
+/* ─── Header ─── */
+.header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:6px 12px 4px; z-index:10; flex-shrink:0;
+}
+.brand-badge {
+  background:linear-gradient(145deg,#c8a870,#8b6914,#d4b484,#7a5c10);
+  border-radius:4px; padding:4px 16px; border:1px solid #a08040;
+  box-shadow:0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.3);
+}
+.brand-badge span {
+  font-family:'Orbitron',monospace; font-size:11px; font-weight:700;
+  letter-spacing:3px; color:#1a0d00;
+}
+.rivet {
+  width:10px; height:10px; border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#e8dcc8,#8b7050,#4a3020);
+  box-shadow:0 2px 4px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.4);
+}
+.gps-badge {
+  display:flex; align-items:center; gap:5px;
+  font-size:9px; font-weight:600; letter-spacing:2px; color:var(--amber-dim); text-transform:uppercase;
+}
+.gps-dot { width:7px; height:7px; border-radius:50%; background:#7a3d00; animation:blink 2s infinite; }
+.gps-dot.on { background:#39ff14; box-shadow:0 0 7px #0f0; animation:gpsPulse 1.5s infinite; }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes gpsPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}}
+
+/* ─── Main layout: portrait vs landscape ─── */
+.main {
+  flex:1; display:flex; flex-direction:column;
+  padding:4px 8px; gap:6px; z-index:10;
+  overflow:hidden;
+  padding-bottom: var(--safe-bot);
+}
+
+/* Portrait: speedo top, middle row, bottom row */
+.row { display:flex; gap:6px; align-items:stretch; }
+.row.center { justify-content:center; }
+
+/* ─── Card base ─── */
+.card {
+  background:linear-gradient(145deg,var(--dark),var(--dark2));
+  border-radius:10px; border:1px solid var(--border);
+  box-shadow:0 0 0 2px var(--border2),inset 0 1px 0 rgba(255,255,255,.04),0 3px 10px rgba(0,0,0,.5);
+  display:flex; flex-direction:column; align-items:center;
+  padding:6px 8px 6px; flex:1; min-width:0;
+}
+.card-label {
+  font-size:10px; font-weight:600; letter-spacing:3px;
+  color:var(--amber-dim); text-transform:uppercase; margin-bottom:4px;
+  font-family:'Oswald',sans-serif;
+}
+
+/* ─── SVG gauge wrapper — square, fills available space ─── */
+.gauge-wrap {
+  width:100%; position:relative;
+  flex:1; min-height:0;
+  display:flex; align-items:center; justify-content:center;
+}
+.gauge-wrap svg { display:block; }
+
+/* ─── Digital readout ─── */
+.digital {
+  font-family:'Nixie One',monospace; color:var(--nixie);
+  text-shadow:0 0 8px var(--nixie-glow); line-height:1;
+  text-align:center; margin-top:2px;
+}
+.digital.lg { font-size:clamp(28px,6vw,48px); }
+.digital.md { font-size:clamp(18px,3.5vw,28px); }
+.digital.sm { font-size:clamp(13px,2.5vw,18px); }
+
+.unit-label {
+  font-size:9px; letter-spacing:2px; color:var(--amber-dim);
+  text-transform:uppercase; line-height:1;
+}
+
+/* ─── Speedo card ─── */
+#speedCard {
+  /* In portrait: row by itself, centered */
+}
+
+/* ─── Compass inline label ─── */
+.compass-dir {
+  display:flex; flex-direction:column; align-items:center; gap:1px; margin-top:2px;
+}
+.dir-deg { font-family:'Nixie One',monospace; font-size:clamp(16px,3.5vw,26px); color:var(--nixie); text-shadow:0 0 8px var(--nixie-glow); line-height:1; }
+.dir-name { font-size:9px; font-weight:600; letter-spacing:2px; color:var(--cream); }
+
+/* ─── GPS accuracy lamps ─── */
+.lamp-row { display:flex; gap:5px; margin-top:3px; }
+.lamp {
+  width:9px; height:9px; border-radius:50%;
+  background:#1a0800; border:1px solid #3a1a08; transition:all .3s;
+}
+.lamp.r { background:#cc2200; border-color:#ff3300; box-shadow:0 0 6px #f20; }
+.lamp.y { background:#bb7700; border-color:#ffaa00; box-shadow:0 0 6px #f90; }
+.lamp.g { background:#22aa00; border-color:#44ff00; box-shadow:0 0 6px #2f0; }
+
+/* ─── VS arrow ─── */
+.vs-arrow { font-size:16px; line-height:1; }
+.vs-arrow.up   { color:#39ff14; text-shadow:0 0 6px #0f0; }
+.vs-arrow.dn   { color:#ff3300; text-shadow:0 0 6px #f30; }
+.vs-arrow.fl   { color:var(--amber-dim); }
+
+/* ─── Clock row ─── */
+.clock-row { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; }
+.time-big { font-family:'Nixie One',monospace; font-size:clamp(24px,5.5vw,44px); color:var(--nixie); text-shadow:0 0 10px var(--nixie-glow); letter-spacing:3px; line-height:1; }
+.date-sm  { font-family:'Nixie One',monospace; font-size:clamp(9px,1.8vw,13px); color:var(--amber-dim); letter-spacing:1px; margin-top:2px; }
+
+/* ─── Accelerometer ball ─── */
+.accel-ball {
+  position:absolute;
+  width:16px; height:16px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #ffffff, #ffcc44 40%, #ff8800 70%, #cc4400);
+  box-shadow:0 0 10px #ff8800, 0 0 20px rgba(255,140,0,.5), inset 0 1px 2px rgba(255,255,255,.6);
+  transform:translate(-50%,-50%);
+  transition:left 0.15s ease-out, top 0.15s ease-out;
+  pointer-events:none;
+}
+
+/* ═══════════════════════════════════════════════════
+   LANDSCAPE LAYOUT
+═══════════════════════════════════════════════════ */
+@media (orientation: landscape) {
+  .main {
+    flex-direction:row;
+    padding:4px 8px;
+    gap:6px;
   }
-  html,body{height:100%;height:100dvh;overflow:hidden;background:#0a0a0a}
-  body{display:flex;justify-content:center;font-family:'Oswald',sans-serif}
-
-  .dashboard{
-    width:100%;max-width:430px;height:100dvh;
-    background:
-      repeating-linear-gradient(92deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px),
-      repeating-linear-gradient(180deg,transparent,transparent 8px,rgba(0,0,0,.04) 8px,rgba(0,0,0,.04) 9px),
-      linear-gradient(160deg,#5c2e0a 0%,#8b4513 15%,#6b3010 30%,#a0522d 45%,#7a3b18 55%,#c8722a 70%,#8b4513 85%,#4a1e08 100%);
-    position:relative;display:flex;flex-direction:column;overflow:hidden;
+  /* Left column: speedo */
+  .col-left {
+    display:flex; flex-direction:column;
+    gap:6px; flex:0 0 auto;
+    /* speedo takes left column */
   }
-  .dashboard::before{
-    content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
-    background:repeating-linear-gradient(175deg,transparent 0,transparent 3px,rgba(0,0,0,.08) 3px,rgba(0,0,0,.08) 4px,transparent 4px,transparent 10px,rgba(255,255,255,.03) 10px,rgba(255,255,255,.03) 11px);
+  /* Right column: everything else */
+  .col-right {
+    display:flex; flex-direction:column;
+    gap:6px; flex:1; min-width:0;
   }
-  .dashboard::after{
-    content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
-    background:linear-gradient(120deg,rgba(255,255,255,.08) 0%,transparent 40%,rgba(0,0,0,.15) 70%,rgba(255,255,255,.04) 100%);
-  }
-  .scanline{position:absolute;inset:0;pointer-events:none;z-index:5;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px)}
-  .chrome-strip{width:100%;height:6px;flex-shrink:0;position:relative;z-index:10;background:linear-gradient(180deg,#e8dcc8 0%,#f5ede0 30%,#c8b89a 60%,#a09070 100%);box-shadow:0 2px 8px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.6)}
-  .scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;position:relative;z-index:10;scrollbar-width:none}
-  .scroll-area::-webkit-scrollbar{display:none}
-  .content{display:flex;flex-direction:column;align-items:center;padding:12px 14px env(safe-area-inset-bottom,20px);gap:12px}
+  .col-right .row { flex:1; }
+  /* Hide portrait-only wrappers */
+  .portrait-only { display:none !important; }
+  .landscape-only { display:flex !important; }
+}
+@media (orientation: portrait) {
+  .landscape-only { display:none !important; }
+  .portrait-only { display:flex !important; }
+  .col-left, .col-right { display:contents; }
+}
 
-  .brand-badge{background:linear-gradient(145deg,#c8a870,#8b6914,#d4b484,#7a5c10);border-radius:4px;padding:5px 20px;border:1px solid #a08040;box-shadow:0 3px 12px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.3),inset 0 -1px 0 rgba(0,0,0,.3)}
-  .brand-badge span{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:4px;color:#1a0d00;text-shadow:0 1px 0 rgba(255,255,255,.4)}
-  .rivets{display:flex;justify-content:space-between;align-items:center;width:100%;padding:0 4px}
-  .rivet{width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#e8dcc8,#8b7050,#4a3020);box-shadow:0 2px 4px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.4)}
-
-  .status-bar{display:flex;justify-content:space-between;align-items:center;width:100%;padding:0 4px}
-  .gps-status{display:flex;align-items:center;gap:6px;font-size:9px;font-weight:600;letter-spacing:3px;color:var(--amber-dim);text-transform:uppercase}
-  .gps-dot{width:8px;height:8px;border-radius:50%;background:#994d00;animation:blink 2s infinite}
-  .gps-dot.connected{background:#39ff14;box-shadow:0 0 8px #0f0;animation:pulse 1.5s infinite}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-  @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.7}}
-  .coord-value{font-family:'Nixie One',monospace;font-size:10px;color:var(--amber-dim)}
-
-  /* ── Speedometer ── */
-  /* CRITICAL: speedo-ring is position:relative, SVG fills it,
-     speed-center is absolute and rendered INSIDE the same stacking context.
-     The needle lives in the SVG. We ensure hub+needle are drawn LAST in SVG
-     so they appear above everything else. The digital readout sits above via z-index
-     but we shift it DOWN so it doesn't cover the needle path area. */
-  .speedo-container{position:relative;width:min(290px,74vw);height:min(290px,74vw)}
-  .speedo-ring{
-    width:100%;height:100%;border-radius:50%;
-    background:radial-gradient(circle at 45% 40%,#2e1a08,#1a0d00);
-    box-shadow:0 0 0 3px #6b3a1f,0 0 0 6px #3d1f0a,0 0 0 8px #c8b89a,0 0 0 10px #8b6914,0 8px 32px rgba(0,0,0,.8),inset 0 0 40px rgba(0,0,0,.6);
-    position:relative;overflow:hidden;
-  }
-  /* SVG fills ring completely */
-  .speedo-svg{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1}
-  /* Digital readout sits above SVG but pushed to bottom third of gauge */
-  .speedo-center{
-    position:absolute;bottom:18%;left:0;right:0;
-    display:flex;flex-direction:column;align-items:center;
-    z-index:2;pointer-events:none;
-  }
-  .speed-value{font-family:'Nixie One',monospace;font-size:min(56px,14vw);color:var(--nixie);text-shadow:0 0 8px var(--nixie-glow),0 0 20px rgba(255,100,0,.5);line-height:1}
-  .speed-unit{font-size:10px;font-weight:300;color:var(--amber-dim);letter-spacing:3px;margin-top:1px}
-
-  /* Cards */
-  .card{width:100%;background:linear-gradient(145deg,#1a0d00,#2a1505);border-radius:12px;border:1px solid #6b3a1f;box-shadow:0 0 0 2px #3d1f0a,inset 0 1px 0 rgba(255,255,255,.05),0 4px 16px rgba(0,0,0,.5);padding:12px 16px}
-  .card-label{font-size:9px;font-weight:600;letter-spacing:4px;color:var(--amber-dim);text-transform:uppercase;margin-bottom:8px}
-
-  /* Compass */
-  .compass-display{display:flex;align-items:center;gap:14px}
-  .compass-rose{width:72px;height:72px;flex-shrink:0}
-  .compass-rose svg{width:100%;height:100%;transition:transform .4s ease}
-  .direction-value{font-family:'Nixie One',monospace;font-size:42px;color:var(--nixie);text-shadow:0 0 10px var(--nixie-glow);line-height:1}
-  .direction-name{font-size:14px;font-weight:600;color:var(--cream);letter-spacing:3px;margin-top:4px}
-
-  /* Accuracy lamps */
-  .lamp-panel{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
-  .lamp-label{font-size:7px;letter-spacing:2px;color:var(--amber-dim);text-align:right}
-  .lamp-row-single{display:flex;gap:6px;align-items:center}
-  .lamp{width:10px;height:10px;border-radius:50%;background:#1a0800;border:1px solid #3a1a08;transition:all .3s}
-  .lamp.lit-red  {background:#cc2200;border-color:#ff3300;box-shadow:0 0 7px #ff2200}
-  .lamp.lit-amber{background:#cc7700;border-color:#ffaa00;box-shadow:0 0 7px #ff9900}
-  .lamp.lit-green{background:#22bb00;border-color:#44ff00;box-shadow:0 0 7px #33ff00}
-
-  /* Gauge grid */
-  .gauge-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
-  .gauge-card{background:linear-gradient(145deg,#1a0d00,#2a1505);border-radius:10px;border:1px solid #6b3a1f;box-shadow:0 0 0 2px #3d1f0a,inset 0 1px 0 rgba(255,255,255,.05),0 4px 12px rgba(0,0,0,.4);padding:10px 10px 8px;display:flex;flex-direction:column;align-items:center;gap:4px}
-  .gauge-svg-wrap{width:min(120px,28vw);height:min(120px,28vw)}
-  .gauge-svg-wrap svg{width:100%;height:100%}
-  .gauge-digital{font-family:'Nixie One',monospace;font-size:18px;color:var(--nixie);text-shadow:0 0 6px var(--nixie-glow);text-align:center;line-height:1}
-  .gauge-unit{font-size:9px;letter-spacing:2px;color:var(--amber-dim);text-transform:uppercase}
-  .vs-arrow{font-size:20px;line-height:1;transition:color .3s}
-  .vs-arrow.up{color:#39ff14;text-shadow:0 0 8px #0f0}
-  .vs-arrow.down{color:#ff3300;text-shadow:0 0 8px #f30}
-  .vs-arrow.flat{color:var(--amber-dim)}
-
-  /* Info */
-  .info-card{background:linear-gradient(145deg,#1a0d00,#2a1505);border-radius:10px;border:1px solid #6b3a1f;box-shadow:0 0 0 2px #3d1f0a,inset 0 1px 0 rgba(255,255,255,.05);padding:10px 12px;width:100%}
-  .info-value{font-family:'Nixie One',monospace;font-size:24px;color:var(--nixie);text-shadow:0 0 8px var(--nixie-glow);line-height:1;margin-top:2px}
-  .sub-text{font-family:'Nixie One',monospace;font-size:10px;color:var(--amber-dim);letter-spacing:1px;margin-top:3px}
-
-  /* Clock */
-  .clock-inner{display:flex;align-items:center;justify-content:space-between}
-  .time-value{font-family:'Nixie One',monospace;font-size:52px;color:var(--nixie);text-shadow:0 0 10px var(--nixie-glow),0 0 25px rgba(255,100,0,.3);line-height:1;letter-spacing:4px}
-  .date-value{font-family:'Nixie One',monospace;font-size:11px;color:var(--amber-dim);letter-spacing:2px;margin-top:4px}
-  .sec-arc{transition:stroke-dashoffset 1s linear}
-
-  /* Perm */
-  .perm-overlay{position:fixed;inset:0;background:rgba(10,5,0,.97);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px 30px}
-  .perm-title{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--amber);text-align:center;letter-spacing:2px;text-shadow:0 0 10px rgba(255,140,0,.5)}
-  .perm-text{font-size:14px;color:var(--cream);text-align:center;line-height:1.8;opacity:.8}
-  .perm-btn{background:linear-gradient(145deg,#c8a870,#8b6914,#d4b484);border:none;border-radius:8px;padding:14px 36px;font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:3px;color:#1a0d00;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.3);text-transform:uppercase}
-  .perm-btn:active{transform:scale(.97)}
+/* ─── Permission overlay ─── */
+.perm {
+  position:fixed; inset:0; background:rgba(10,5,0,.97); z-index:100;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:16px; padding:32px;
+}
+.perm-title { font-family:'Orbitron',monospace; font-size:18px; font-weight:700; color:var(--amber); letter-spacing:2px; text-align:center; }
+.perm-text  { font-size:13px; color:var(--cream); text-align:center; line-height:1.8; opacity:.85; }
+.perm-btn {
+  background:linear-gradient(145deg,#c8a870,#8b6914,#d4b484); border:none; border-radius:8px;
+  padding:13px 34px; font-family:'Oswald',sans-serif; font-size:15px; font-weight:600;
+  letter-spacing:3px; color:#1a0d00; cursor:pointer;
+  box-shadow:0 4px 14px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.3);
+  text-transform:uppercase;
+}
+.perm-btn:active { transform:scale(.97); }
 </style>
 </head>
 <body>
 
-<div class="perm-overlay" id="permOverlay">
-  <div class="brand-badge"><span>RetroNav Mk.02</span></div>
-  <div class="perm-title">GPS信号を検出中</div>
-  <div class="perm-text">現在地の情報を使用して<br>速度・方角・位置を表示します。<br><br>「許可」を選択してください。</div>
-  <button class="perm-btn" onclick="initGPS()">エンジン始動</button>
+<!-- Permission overlay -->
+<div class="perm" id="permOverlay">
+  <div class="brand-badge"><span>RetroNav Mk.03</span></div>
+  <div class="perm-title">Initialize Sensors</div>
+  <div class="perm-text">
+    GPS and accelerometer access required.<br>
+    Tap below, then allow location access.
+  </div>
+  <button class="perm-btn" id="startBtn">Start Engine</button>
 </div>
 
 <div class="dashboard">
   <div class="scanline"></div>
-  <div class="chrome-strip"></div>
-  <div class="scroll-area">
-    <div class="content">
+  <div class="chrome-top"></div>
 
-      <div class="rivets">
-        <div class="rivet"></div>
-        <div class="brand-badge"><span>RetroNav Mk.02</span></div>
-        <div class="rivet"></div>
-      </div>
+  <div class="header">
+    <div class="rivet"></div>
+    <div class="brand-badge"><span>RetroNav Mk.03</span></div>
+    <div class="gps-badge">
+      <div class="gps-dot" id="gpsDot"></div>
+      <span id="gpsText">STANDBY</span>
+    </div>
+    <div class="rivet"></div>
+  </div>
 
-      <div class="status-bar">
-        <div class="gps-status">
-          <div class="gps-dot" id="gpsDot"></div>
-          <span id="gpsText">待機中</span>
+  <!-- ════ MAIN LAYOUT ════ -->
+  <div class="main" id="mainLayout">
+
+    <!-- LEFT COL (portrait: full width rows; landscape: left column) -->
+    <div class="col-left" id="colLeft">
+
+      <!-- SPEEDOMETER -->
+      <div class="card" id="speedCard" style="align-items:center">
+        <div class="card-label">Speed</div>
+        <div class="gauge-wrap" id="speedWrap">
+          <svg id="speedSvg" style="overflow:visible"></svg>
         </div>
-        <div class="coord-value" id="coordDisplay">--°-- --°--</div>
+        <div class="digital lg" id="speedDigital">0</div>
+        <div class="unit-label">km/h</div>
       </div>
 
-      <!-- ══ Speedometer ══ -->
-      <div class="speedo-container">
-        <div class="speedo-ring">
-          <!-- SVG contains everything including needle (drawn last = on top) -->
-          <svg class="speedo-svg" viewBox="0 0 280 280" id="speedoSvg"></svg>
-          <!-- Digital readout floats above SVG, positioned at bottom so needle is visible -->
-          <div class="speedo-center">
-            <div class="speed-value" id="speedValue">0</div>
-            <div class="speed-unit">km/h</div>
+    </div><!-- /col-left -->
+
+    <!-- RIGHT COL -->
+    <div class="col-right" id="colRight">
+
+      <!-- ROW 1: Compass + Accelerometer -->
+      <div class="row" id="row1">
+
+        <!-- COMPASS -->
+        <div class="card">
+          <div class="card-label">Compass</div>
+          <div class="gauge-wrap">
+            <svg id="compassGaugeSvg" style="overflow:visible"></svg>
+          </div>
+          <div class="compass-dir">
+            <div class="dir-deg" id="headDeg">---</div>
+            <div class="dir-name" id="headDir">· · ·</div>
+          </div>
+          <div class="lamp-row" id="lampRow">
+            <div class="lamp" id="l0"></div>
+            <div class="lamp" id="l1"></div>
+            <div class="lamp" id="l2"></div>
+            <div class="lamp" id="l3"></div>
+            <div class="lamp" id="l4"></div>
+            <div class="lamp" id="l5"></div>
           </div>
         </div>
-      </div>
 
-      <!-- ══ Compass ══ -->
-      <div class="card">
-        <div class="card-label">方位コンパス</div>
-        <div class="compass-display">
-          <div class="compass-rose">
-            <svg viewBox="0 0 80 80" id="compassSvg">
-              <circle cx="40" cy="40" r="38" fill="none" stroke="#6b3a1f" stroke-width="1.5"/>
-              <circle cx="40" cy="40" r="36" fill="none" stroke="#3d1f0a" stroke-width="1"/>
-              <g stroke="#994d00" stroke-width=".8">
-                <line x1="40" y1="4" x2="40" y2="9"/>
-                <line x1="76" y1="40" x2="71" y2="40"/>
-                <line x1="40" y1="76" x2="40" y2="71"/>
-                <line x1="4" y1="40" x2="9" y2="40"/>
-              </g>
-              <text x="40" y="18" text-anchor="middle" fill="#ffb347" font-size="9" font-family="Orbitron" font-weight="700">N</text>
-              <text x="40" y="67" text-anchor="middle" fill="#994d00" font-size="7" font-family="Orbitron">S</text>
-              <text x="67" y="43" text-anchor="middle" fill="#994d00" font-size="7" font-family="Orbitron">E</text>
-              <text x="13" y="43" text-anchor="middle" fill="#994d00" font-size="7" font-family="Orbitron">W</text>
-              <polygon points="40,12 43,40 40,46 37,40" fill="#ff3c00" opacity=".9"/>
-              <polygon points="40,68 43,40 40,46 37,40" fill="#994d00" opacity=".6"/>
-              <circle cx="40" cy="40" r="4" fill="#c8a870"/>
-            </svg>
+        <!-- ACCELEROMETER -->
+        <div class="card">
+          <div class="card-label">G-Force</div>
+          <div class="gauge-wrap" style="position:relative">
+            <svg id="accelSvg" style="overflow:visible"></svg>
+            <div class="accel-ball" id="accelBall"></div>
           </div>
-          <div style="flex:1">
-            <div class="direction-value" id="headingValue">---</div>
-            <div class="direction-name" id="directionName">-- · --</div>
-          </div>
-          <div class="lamp-panel">
-            <div class="lamp-label">GPS精度</div>
-            <div class="lamp-row-single">
-              <div class="lamp" id="lmp0"></div>
-              <div class="lamp" id="lmp1"></div>
-              <div class="lamp" id="lmp2"></div>
-              <div class="lamp" id="lmp3"></div>
-              <div class="lamp" id="lmp4"></div>
-              <div class="lamp" id="lmp5"></div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:2px">
+            <div style="text-align:center">
+              <div class="digital sm" id="accelX">0.0</div>
+              <div class="unit-label">LAT-G</div>
+            </div>
+            <div style="text-align:center">
+              <div class="digital sm" id="accelY">0.0</div>
+              <div class="unit-label">LON-G</div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- ══ Altimeter + VS ══ -->
-      <div class="gauge-grid">
-        <div class="gauge-card">
-          <div class="card-label">高度計</div>
-          <div class="gauge-svg-wrap"><svg viewBox="0 0 120 120" id="altSvg"></svg></div>
-          <div class="gauge-digital" id="altDigital">---</div>
-          <div class="gauge-unit">METERS</div>
-        </div>
-        <div class="gauge-card">
-          <div class="card-label">垂直速度 VS</div>
-          <div class="gauge-svg-wrap"><svg viewBox="0 0 120 120" id="vsSvg"></svg></div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <div class="vs-arrow flat" id="vsArrow">→</div>
-            <div class="gauge-digital" id="vsDigital">--</div>
-          </div>
-          <div class="gauge-unit">m / min</div>
-        </div>
-      </div>
+      </div><!-- /row1 -->
 
-      <!-- GPS info -->
-      <div class="info-card">
-        <div class="card-label">GPS情報</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
-          <div>
-            <div style="font-size:8px;letter-spacing:2px;color:var(--amber-dim)">精度</div>
-            <div class="info-value" id="accValue">±--</div>
-            <div class="sub-text">METERS</div>
+      <!-- ROW 2: Altimeter + VS + Clock -->
+      <div class="row" id="row2">
+
+        <!-- ALTIMETER -->
+        <div class="card">
+          <div class="card-label">Altitude</div>
+          <div class="gauge-wrap">
+            <svg id="altSvg" style="overflow:visible"></svg>
           </div>
-          <div>
-            <div style="font-size:8px;letter-spacing:2px;color:var(--amber-dim)">座標</div>
-            <div class="sub-text" id="latValue" style="margin-top:6px">LAT ------</div>
-            <div class="sub-text" id="lonValue">LON ------</div>
+          <div class="digital md" id="altDigital">---</div>
+          <div class="unit-label">meters</div>
+        </div>
+
+        <!-- VS -->
+        <div class="card">
+          <div class="card-label">Vert. Speed</div>
+          <div class="gauge-wrap">
+            <svg id="vsSvg" style="overflow:visible"></svg>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <div class="vs-arrow fl" id="vsArrow">→</div>
+            <div class="digital md" id="vsDigital">--</div>
+          </div>
+          <div class="unit-label">m/min</div>
+        </div>
+
+        <!-- CLOCK -->
+        <div class="card">
+          <div class="card-label">Time</div>
+          <div class="gauge-wrap" style="justify-content:center;flex-direction:column;gap:4px">
+            <div class="time-big" id="timeBig">--:--</div>
+            <div class="date-sm" id="dateSm">--- -- ----</div>
+            <svg id="secSvg" style="margin-top:4px"></svg>
           </div>
         </div>
-      </div>
 
-      <!-- Clock -->
-      <div class="card">
-        <div class="card-label">現在時刻</div>
-        <div class="clock-inner">
-          <div>
-            <div class="time-value" id="timeValue">--:--</div>
-            <div class="date-value" id="dateValue">----年--月--日</div>
-          </div>
-          <svg width="64" height="64" viewBox="0 0 64 64">
-            <circle cx="32" cy="32" r="28" fill="none" stroke="#2a1505" stroke-width="4"/>
-            <circle cx="32" cy="32" r="28" fill="none" stroke="#994d00" stroke-width="4"
-              stroke-dasharray="175.9" stroke-dashoffset="175.9" stroke-linecap="round"
-              transform="rotate(-90 32 32)" id="secArc" class="sec-arc"/>
-            <text x="32" y="36" text-anchor="middle" font-family="Nixie One" font-size="14" fill="#ffb347" id="secText">00</text>
-          </svg>
-        </div>
-      </div>
+      </div><!-- /row2 -->
 
-      <div class="rivets" style="padding-bottom:4px">
-        <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
-      </div>
-    </div>
-  </div>
-</div>
+    </div><!-- /col-right -->
+
+  </div><!-- /main -->
+</div><!-- /dashboard -->
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// CORE HELPER: rotate an SVG <g> element using SVG-native transform.
-// This avoids ALL CSS transform-origin ambiguity.
-// angleDeg: 0 = needle points UP (12 o'clock position)
-// ═══════════════════════════════════════════════════════════════
-function rotateSvgGroup(id, angleDeg, cx, cy) {
-  const el = document.getElementById(id);
-  if (el) el.setAttribute('transform', `rotate(${angleDeg},${cx},${cy})`);
+'use strict';
+// ═══════════════════════════════════════════════════════
+// GEOMETRY HELPERS
+// ═══════════════════════════════════════════════════════
+const NS = 'http://www.w3.org/2000/svg';
+
+function svgEl(tag, attrs) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k,v] of Object.entries(attrs)) e.setAttribute(k, String(v));
+  return e;
 }
 
-// Place a point on a circle.
-// angleDeg: 0=12 o'clock, positive=clockwise (matches SVG screen coords)
+// pt: angle 0 = 12 o'clock, CW positive
 function pt(cx, cy, r, angleDeg) {
   const rad = (angleDeg - 90) * Math.PI / 180;
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SPEEDOMETER
-// 0 km/h  → needle at -130° from 12 o'clock (≈ 7 o'clock)
-// 180 km/h → needle at +130° from 12 o'clock (≈ 5 o'clock)
-// Span: 260°
-//
-// FIX for hidden needle: everything — ticks, labels, needle, hub —
-// is drawn inside ONE <svg>. The needle group is the LAST element,
-// so it renders on top of everything in SVG paint order.
-// The HTML .speedo-center overlay is pushed to the bottom 20% of
-// the gauge so it doesn't cover the needle sweep area.
-// ═══════════════════════════════════════════════════════════════
-const S = { cx:140, cy:140, r:118, start:-130, span:260, max:180 };
-
-function spdAngle(kmh) {
-  return S.start + (Math.min(Math.max(kmh,0), S.max) / S.max) * S.span;
+function setRotate(el, deg, cx, cy) {
+  if (el) el.setAttribute('transform', `rotate(${deg.toFixed(3)},${cx},${cy})`);
 }
 
-function buildSpeedoSVG() {
-  const svg = document.getElementById('speedoSvg');
-  const {cx,cy,r,start,span,max} = S;
+// ═══════════════════════════════════════════════════════
+// SMOOTH NEEDLE — each needle has a current & target angle,
+// animated via rAF with exponential decay
+// ═══════════════════════════════════════════════════════
+const needles = {}; // id → { el, cur, tgt, cx, cy }
 
-  // Use DOM API instead of innerHTML to avoid url() reference breakage in inserted SVG
-  const NS = 'http://www.w3.org/2000/svg';
+function registerNeedle(id, el, cx, cy, initAngle = 0) {
+  needles[id] = { el, cur: initAngle, tgt: initAngle, cx, cy };
+}
 
-  function el(tag, attrs) {
-    const e = document.createElementNS(NS, tag);
-    for (const [k,v] of Object.entries(attrs)) e.setAttribute(k, v);
-    return e;
+function setNeedleTarget(id, tgt) {
+  if (needles[id]) needles[id].tgt = tgt;
+}
+
+// Main animation loop
+let rafId;
+function animLoop() {
+  const decay = 0.82; // higher = more inertia (0-1)
+  for (const n of Object.values(needles)) {
+    const diff = n.tgt - n.cur;
+    if (Math.abs(diff) > 0.05) {
+      n.cur += diff * (1 - decay);
+      setRotate(n.el, n.cur, n.cx, n.cy);
+    } else if (n.cur !== n.tgt) {
+      n.cur = n.tgt;
+      setRotate(n.el, n.cur, n.cx, n.cy);
+    }
   }
+  rafId = requestAnimationFrame(animLoop);
+}
+animLoop();
 
-  svg.innerHTML = ''; // clear
+// ═══════════════════════════════════════════════════════
+// LAYOUT MEASUREMENT — get the usable px size for each gauge
+// ═══════════════════════════════════════════════════════
+function getGaugeSize(wrapEl) {
+  const r = wrapEl.getBoundingClientRect();
+  return Math.min(r.width, r.height) || 80;
+}
 
-  // Background track arc
-  const p0 = pt(cx, cy, r, start);
-  const p1 = pt(cx, cy, r, start + span);
-  svg.appendChild(el('path', {
-    d: `M${p0.x.toFixed(2)},${p0.y.toFixed(2)} A${r},${r} 0 1,1 ${p1.x.toFixed(2)},${p1.y.toFixed(2)}`,
-    fill: 'none', stroke: '#2a1505', 'stroke-width': '8'
+// ═══════════════════════════════════════════════════════
+// SPEEDOMETER
+// ═══════════════════════════════════════════════════════
+const SPD = { start: -130, span: 260, max: 180 };
+function spdAngle(kmh) {
+  return SPD.start + (Math.min(Math.max(kmh, 0), SPD.max) / SPD.max) * SPD.span;
+}
+
+function buildSpeedo(size) {
+  const svg = document.getElementById('speedSvg');
+  svg.innerHTML = '';
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size);
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+
+  const cx = size/2, cy = size/2, r = size/2 * 0.88;
+
+  // Background arc
+  const p0 = pt(cx, cy, r, SPD.start);
+  const p1 = pt(cx, cy, r, SPD.start + SPD.span);
+  svg.appendChild(svgEl('path', {
+    d:`M${p0.x.toFixed(2)},${p0.y.toFixed(2)} A${r},${r} 0 1,1 ${p1.x.toFixed(2)},${p1.y.toFixed(2)}`,
+    fill:'none', stroke:'#2a1505', 'stroke-width': r*0.07
   }));
 
   // Red zone 130–180
-  const pr0 = pt(cx, cy, r-10, spdAngle(130));
-  const pr1 = pt(cx, cy, r-10, spdAngle(180));
-  svg.appendChild(el('path', {
-    d: `M${pr0.x.toFixed(2)},${pr0.y.toFixed(2)} A${r-10},${r-10} 0 0,1 ${pr1.x.toFixed(2)},${pr1.y.toFixed(2)}`,
-    fill: 'none', stroke: 'rgba(220,40,0,.55)', 'stroke-width': '7'
+  const pr0 = pt(cx, cy, r*0.9, spdAngle(130));
+  const pr1 = pt(cx, cy, r*0.9, spdAngle(180));
+  svg.appendChild(svgEl('path', {
+    d:`M${pr0.x.toFixed(2)},${pr0.y.toFixed(2)} A${r*.9},${r*.9} 0 0,1 ${pr1.x.toFixed(2)},${pr1.y.toFixed(2)}`,
+    fill:'none', stroke:'rgba(200,30,0,.55)', 'stroke-width': r*0.065
   }));
 
-  // Ticks and labels
+  // Ticks & labels
   for (let i = 0; i <= 18; i++) {
-    const spd = i * 10;
-    const ang = spdAngle(spd);
-    const major = i % 3 === 0;
-    const r1 = r - 4, r2 = r1 - (major ? 18 : 9);
-    const tp1 = pt(cx, cy, r1, ang), tp2 = pt(cx, cy, r2, ang);
-    svg.appendChild(el('line', {
-      x1: tp1.x.toFixed(2), y1: tp1.y.toFixed(2),
-      x2: tp2.x.toFixed(2), y2: tp2.y.toFixed(2),
+    const spd = i * 10, ang = spdAngle(spd), major = i % 3 === 0;
+    const r1 = r * 0.97, r2 = r1 - r * (major ? 0.16 : 0.08);
+    const t1 = pt(cx, cy, r1, ang), t2 = pt(cx, cy, r2, ang);
+    svg.appendChild(svgEl('line', {
+      x1:t1.x.toFixed(2),y1:t1.y.toFixed(2),x2:t2.x.toFixed(2),y2:t2.y.toFixed(2),
       stroke: major ? '#c8a870' : '#5a3020',
-      'stroke-width': major ? '2.5' : '1'
+      'stroke-width': major ? r*0.022 : r*0.009
     }));
     if (major) {
-      const lp = pt(cx, cy, r2 - 16, ang);
-      const txt = document.createElementNS(NS, 'text');
-      txt.setAttribute('x', lp.x.toFixed(2));
-      txt.setAttribute('y', (lp.y + 4).toFixed(2));
-      txt.setAttribute('text-anchor', 'middle');
-      txt.setAttribute('fill', '#a06030');
-      txt.setAttribute('font-size', '13');
-      txt.setAttribute('font-family', 'Nixie One');
+      const lp = pt(cx, cy, r2 - r*0.14, ang);
+      const txt = svgEl('text', { x:lp.x.toFixed(2), y:(lp.y+r*0.035).toFixed(2),
+        'text-anchor':'middle', fill:'#a06030', 'font-size':(r*0.11).toFixed(1), 'font-family':'Nixie One' });
       txt.textContent = String(spd);
       svg.appendChild(txt);
     }
   }
 
-  // NEEDLE — solid color, no url() reference, drawn last = on top
-  const nLen = Math.round(r * 0.80);
-  const nBack = 18;
-  const needleG = el('g', { id: 'spdNeedle', transform: `rotate(${spdAngle(0)},${cx},${cy})` });
-  // Glow layer (slightly wider, dimmer)
-  needleG.appendChild(el('line', {
-    x1: cx, y1: cy + nBack, x2: cx, y2: cy - nLen,
-    stroke: 'rgba(255,120,0,0.35)', 'stroke-width': '8', 'stroke-linecap': 'round'
-  }));
-  // Main needle body
-  needleG.appendChild(el('line', {
-    x1: cx, y1: cy + nBack, x2: cx, y2: cy - nLen,
-    stroke: '#ff6600', 'stroke-width': '3.5', 'stroke-linecap': 'round'
-  }));
-  // Bright tip highlight
-  needleG.appendChild(el('line', {
-    x1: cx, y1: cy - nLen + 10, x2: cx, y2: cy - nLen,
-    stroke: '#ffcc44', 'stroke-width': '2.5', 'stroke-linecap': 'round'
-  }));
-  svg.appendChild(needleG);
+  // Needle group
+  const nLen = r * 0.78, nBack = r * 0.16;
+  const ng = svgEl('g', { id:'spdNeedle', transform:`rotate(${spdAngle(0)},${cx},${cy})` });
+  ng.appendChild(svgEl('line', { x1:cx,y1:cy+nBack,x2:cx,y2:cy-nLen,
+    stroke:'rgba(255,100,0,.3)', 'stroke-width':(r*0.07).toFixed(2),'stroke-linecap':'round' }));
+  ng.appendChild(svgEl('line', { x1:cx,y1:cy+nBack,x2:cx,y2:cy-nLen,
+    stroke:'#ff6600','stroke-width':(r*0.032).toFixed(2),'stroke-linecap':'round' }));
+  ng.appendChild(svgEl('line', { x1:cx,y1:cy-nLen*0.85,x2:cx,y2:cy-nLen,
+    stroke:'#ffdd66','stroke-width':(r*0.022).toFixed(2),'stroke-linecap':'round' }));
+  svg.appendChild(ng);
 
-  // Hub — drawn after needle so it covers needle base
-  svg.appendChild(el('circle', { cx, cy, r: '12', fill: '#c8a040' }));
-  svg.appendChild(el('circle', { cx, cy, r: '7',  fill: '#e8d070' }));
-  svg.appendChild(el('circle', { cx, cy, r: '3',  fill: '#fff8d0' }));
+  // Hub
+  svg.appendChild(svgEl('circle',{cx,cy,r:r*0.10,fill:'#b89030'}));
+  svg.appendChild(svgEl('circle',{cx,cy,r:r*0.062,fill:'#e8d070'}));
+  svg.appendChild(svgEl('circle',{cx,cy,r:r*0.028,fill:'#fff8d0'}));
+
+  registerNeedle('spd', ng, cx, cy, spdAngle(0));
 }
-buildSpeedoSVG();
 
 function updateSpeed(mps) {
   const kmh = Math.round((mps || 0) * 3.6);
-  document.getElementById('speedValue').textContent = kmh;
-  rotateSvgGroup('spdNeedle', spdAngle(kmh), S.cx, S.cy);
+  document.getElementById('speedDigital').textContent = kmh;
+  setNeedleTarget('spd', spdAngle(kmh));
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ALTIMETER — dual needle, ×10 m scale
-//
-// Dial: 10 divisions, each = 10 m → 1 full rotation = 100 m
-//   Long needle (orange): shows ×10 m  → rotates fast
-//   Short needle (blue/teal): shows ×100 m → rotates 10× slower
-//
-// Needle angle = (alt mod 100) / 100 * 360  for long
-//             = (alt / 100) * 360  (unclamped wraps) for short
-// Both start at 12 o'clock = 0.
-// ═══════════════════════════════════════════════════════════════
-const ALT_CX = 60, ALT_CY = 60, ALT_R = 52;
+// ═══════════════════════════════════════════════════════
+// COMPASS GAUGE (analog rose)
+// ═══════════════════════════════════════════════════════
+function buildCompassGauge(size) {
+  const svg = document.getElementById('compassGaugeSvg');
+  svg.innerHTML = '';
+  svg.setAttribute('width', size); svg.setAttribute('height', size);
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  const cx = size/2, cy = size/2, r = size/2 * 0.88;
 
-function buildAltSVG() {
-  const svg = document.getElementById('altSvg');
-  const cx = ALT_CX, cy = ALT_CY, r = ALT_R;
-  let h = '';
+  svg.appendChild(svgEl('circle',{cx,cy,r,fill:'#1a0d00'}));
+  svg.appendChild(svgEl('circle',{cx,cy,r,fill:'none',stroke:'#6b3a1f','stroke-width':'1.5'}));
 
-  h += `<defs>
-    <radialGradient id="hubAlt" cx="38%" cy="32%">
-      <stop offset="0%" stop-color="#f0e090"/>
-      <stop offset="100%" stop-color="#7a5010"/>
-    </radialGradient>
-  </defs>`;
-
-  h += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#1a0d00"/>`;
-  h += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#6b3a1f" stroke-width="2"/>`;
-  h += `<circle cx="${cx}" cy="${cy}" r="${r-3}" fill="none" stroke="#2a1005" stroke-width=".8"/>`;
-
-  // 50 ticks (major every 5 = 10 m division)
-  for (let i = 0; i < 50; i++) {
-    const major = i % 5 === 0;
-    const ang = (i / 50) * 360; // 0 = 12 o'clock
-    const r1 = r - 3, r2 = r1 - (major ? 11 : 5);
-    const tp1 = pt(cx, cy, r1, ang), tp2 = pt(cx, cy, r2, ang);
-    h += `<line x1="${tp1.x.toFixed(1)}" y1="${tp1.y.toFixed(1)}" x2="${tp2.x.toFixed(1)}" y2="${tp2.y.toFixed(1)}" stroke="${major?'#c8a870':'#4a2810'}" stroke-width="${major?1.5:.7}"/>`;
+  // 36 ticks, 8 cardinals
+  const cardinals = ['N','NE','E','SE','S','SW','W','NW'];
+  for (let i = 0; i < 36; i++) {
+    const ang = i * 10, major = i % 9 === 0, medium = i % 3 === 0;
+    const r1 = r - 2, r2 = r1 - r*(major ? 0.14 : medium ? 0.09 : 0.05);
+    const t1 = pt(cx,cy,r1,ang), t2 = pt(cx,cy,r2,ang);
+    svg.appendChild(svgEl('line',{
+      x1:t1.x.toFixed(2),y1:t1.y.toFixed(2),x2:t2.x.toFixed(2),y2:t2.y.toFixed(2),
+      stroke: major ? '#c8a870' : medium ? '#7a4820' : '#4a2810',
+      'stroke-width': major ? 1.5 : 0.8
+    }));
     if (major) {
-      const lp = pt(cx, cy, r2 - 9, ang);
-      h += `<text x="${lp.x.toFixed(1)}" y="${(lp.y+3).toFixed(1)}" text-anchor="middle" fill="#a06030" font-size="8" font-family="Nixie One">${i/5}</text>`;
+      const idx = i / 9;
+      const lp = pt(cx,cy,r2 - r*0.13, ang);
+      const col = idx === 0 ? '#ffb347' : '#a06030';
+      const txt = svgEl('text',{x:lp.x.toFixed(2),y:(lp.y+r*0.04).toFixed(2),
+        'text-anchor':'middle',fill:col,'font-size':(r*0.14).toFixed(1),'font-family':'Orbitron','font-weight':'700'});
+      txt.textContent = cardinals[idx];
+      svg.appendChild(txt);
     }
   }
 
-  // Short needle: ×100 m indicator (teal/blue-gray, shorter)
-  h += `<g id="altShortNeedle" transform="rotate(0,${cx},${cy})">
-    <line x1="${cx}" y1="${cy+8}" x2="${cx}" y2="${cy-r*0.50}"
-      stroke="#66cccc" stroke-width="2.2" stroke-linecap="round" opacity=".85"/>
-  </g>`;
+  // Needle (N=red up, S=dim down)
+  const nLen = r * 0.70, nBack = r * 0.25;
+  const ng = svgEl('g',{id:'cmpNeedle',transform:`rotate(0,${cx},${cy})`});
+  ng.appendChild(svgEl('polygon',{
+    points:`${cx},${cy-nLen} ${cx+r*.06},${cy} ${cx},${cy+nBack} ${cx-r*.06},${cy}`,
+    fill:'#ff3300',opacity:'.9'
+  }));
+  ng.appendChild(svgEl('polygon',{
+    points:`${cx},${cy+nLen*0.7} ${cx+r*.05},${cy} ${cx},${cy+nBack} ${cx-r*.05},${cy}`,
+    fill:'#884400',opacity:'.7'
+  }));
+  svg.appendChild(ng);
+  svg.appendChild(svgEl('circle',{cx,cy,r:r*0.07,fill:'#c8a040'}));
+  svg.appendChild(svgEl('circle',{cx,cy,r:r*0.035,fill:'#f0d880'}));
 
-  // Long needle: ×10 m (orange, full length)
-  h += `<g id="altLongNeedle" transform="rotate(0,${cx},${cy})">
-    <line x1="${cx}" y1="${cy+10}" x2="${cx}" y2="${cy-r*0.76}"
-      stroke="#ff9944" stroke-width="2.5" stroke-linecap="round"/>
-  </g>`;
-
-  // Hub
-  h += `<circle cx="${cx}" cy="${cy}" r="5" fill="#c8a040"/>
-  <circle cx="${cx}" cy="${cy}" r="2.2" fill="#f8f0c0"/>`;
-  h += `<text x="${cx}" y="${cy+43}" text-anchor="middle" fill="#3a1808" font-size="6" font-family="Oswald" letter-spacing="1">×10m</text>`;
-
-  svg.innerHTML = h;
-}
-buildAltSVG();
-
-function updateAlt(alt) {
-  const m = alt !== null ? Math.round(alt) : null;
-  document.getElementById('altDigital').textContent = m !== null ? m : '---';
-  if (m !== null) {
-    // Long needle: 1 rotation = 100 m (×10 scale, 10 divisions each = 10 m)
-    const longAng = (m / 100) * 360;
-    // Short needle: 1 rotation = 1000 m (10× slower)
-    const shortAng = (m / 1000) * 360;
-    rotateSvgGroup('altLongNeedle', longAng, ALT_CX, ALT_CY);
-    rotateSvgGroup('altShortNeedle', shortAng, ALT_CX, ALT_CY);
-  }
+  registerNeedle('cmp', ng, cx, cy, 0);
 }
 
-// ═══════════════════════════════════════════════════════════════
-// VERTICAL SPEED INDICATOR
-// ×10 m/min scale. Dial: 0 at top.
-//   +n (climb) → CCW (left side, green)
-//   -n (descent) → CW (right side, red)
-// Major marks at 0, ±1, ±2, ±3, ±4, ±5 (each = 10 m/min)
-// Total span: ±150° from top (300° total, matches ±5 labels).
-// Needle is UNCLAMPED: beyond ±50 m/min it keeps rotating past the scale.
-// ═══════════════════════════════════════════════════════════════
-const VS_CX = 60, VS_CY = 60, VS_R = 52;
-const VS_DEG_PER_10 = 30; // 30° per 10 m/min division → ±5 = ±150°
-
-function vsAngle(mpm) {
-  // climb = CCW = negative angle from 12 o'clock
-  return -(mpm / 10) * VS_DEG_PER_10;
+function updateHeading(h) {
+  if (h == null) return;
+  const deg = Math.round(h);
+  document.getElementById('headDeg').textContent = deg + '°';
+  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+  document.getElementById('headDir').textContent = dirs[Math.round(deg/45)%8];
+  setNeedleTarget('cmp', -deg); // compass rose rotates opposite to heading
 }
 
-function buildVSSVG() {
-  const svg = document.getElementById('vsSvg');
-  const cx = VS_CX, cy = VS_CY, r = VS_R;
-  let h = '';
+// ═══════════════════════════════════════════════════════
+// ACCELEROMETER
+// ═══════════════════════════════════════════════════════
+function buildAccel(size) {
+  const svg = document.getElementById('accelSvg');
+  svg.innerHTML = '';
+  svg.setAttribute('width', size); svg.setAttribute('height', size);
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  const cx = size/2, cy = size/2, r = size/2 * 0.88;
 
-  h += `<defs>
-    <radialGradient id="hubVS" cx="38%" cy="32%">
-      <stop offset="0%" stop-color="#f0e090"/>
-      <stop offset="100%" stop-color="#7a5010"/>
-    </radialGradient>
-  </defs>`;
-
-  h += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#1a0d00"/>`;
-  h += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#6b3a1f" stroke-width="2"/>`;
-  h += `<circle cx="${cx}" cy="${cy}" r="${r-3}" fill="none" stroke="#2a1005" stroke-width=".8"/>`;
-
-  // Major ticks: 0, ±1, ±2, ±3, ±4, ±5 (×10 m/min)
-  const majors = [0, 1, 2, 3, 4, 5, -1, -2, -3, -4, -5];
-  majors.forEach(v => {
-    const ang = vsAngle(v * 10);
-    const r1 = r - 3, r2 = r1 - 11;
-    const tp1 = pt(cx, cy, r1, ang), tp2 = pt(cx, cy, r2, ang);
-    const col = v > 0 ? '#33ee00' : v < 0 ? '#ff6644' : '#c8a870';
-    h += `<line x1="${tp1.x.toFixed(1)}" y1="${tp1.y.toFixed(1)}" x2="${tp2.x.toFixed(1)}" y2="${tp2.y.toFixed(1)}" stroke="${col}" stroke-width="1.5"/>`;
-    const lp = pt(cx, cy, r2 - 9, ang);
-    const label = v === 0 ? '0' : `${v > 0 ? '+' : ''}${v}`;
-    h += `<text x="${lp.x.toFixed(1)}" y="${(lp.y+3).toFixed(1)}" text-anchor="middle" fill="${col}" font-size="7.5" font-family="Nixie One">${label}</text>`;
+  // Background circles
+  svg.appendChild(svgEl('circle',{cx,cy,r,fill:'#1a0d00',stroke:'#6b3a1f','stroke-width':'1.5'}));
+  [r*0.33, r*0.66].forEach(ri => {
+    svg.appendChild(svgEl('circle',{cx,cy,r:ri.toFixed(1),fill:'none',stroke:'#3a1808','stroke-width':'1'}));
   });
 
-  // Minor ticks every 5 m/min between majors
-  for (let v10 = -50; v10 <= 50; v10 += 5) {
-    if (v10 % 10 === 0) continue; // skip majors
-    const ang = vsAngle(v10);
-    const r1 = r - 3, r2 = r1 - 5;
-    const tp1 = pt(cx, cy, r1, ang), tp2 = pt(cx, cy, r2, ang);
-    h += `<line x1="${tp1.x.toFixed(1)}" y1="${tp1.y.toFixed(1)}" x2="${tp2.x.toFixed(1)}" y2="${tp2.y.toFixed(1)}" stroke="#5a3020" stroke-width=".8"/>`;
+  // Cross hairs
+  svg.appendChild(svgEl('line',{x1:(cx-r).toFixed(2),y1:cy,x2:(cx+r).toFixed(2),y2:cy,stroke:'#3a1808','stroke-width':'1'}));
+  svg.appendChild(svgEl('line',{x1:cx,y1:(cy-r).toFixed(2),x2:cx,y2:(cy+r).toFixed(2),stroke:'#3a1808','stroke-width':'1'}));
+
+  // G labels
+  ['+1G','+2G'].forEach((label,i) => {
+    const ri = r * (i===0 ? 0.33 : 0.66);
+    const txt = svgEl('text',{x:(cx+ri+4).toFixed(2),y:(cy-3).toFixed(2),
+      fill:'#5a3020','font-size':(r*0.10).toFixed(1),'font-family':'Nixie One'});
+    txt.textContent = label;
+    svg.appendChild(txt);
+  });
+
+  // Axis labels
+  [['F',cx,cy-r+r*.16],['B',cx,cy+r-r*.1],['R',cx+r-r*.1,cy+r*.04],['L',cx-r+r*.14,cy+r*.04]].forEach(([t,x,y])=>{
+    const el = svgEl('text',{x:x.toFixed(2),y:y.toFixed(2),'text-anchor':'middle',
+      fill:'#7a5030','font-size':(r*0.12).toFixed(1),'font-family':'Oswald','font-weight':'600'});
+    el.textContent = t;
+    svg.appendChild(el);
+  });
+
+  // Position the ball element relative to the wrap div
+  const wrap = document.getElementById('accelSvg').parentElement;
+  const ball = document.getElementById('accelBall');
+  // Store dimensions for ball movement
+  wrap._accelR = r;
+  wrap._accelCx = cx;
+  wrap._accelCy = cy;
+  wrap._accelSize = size;
+}
+
+// Ball position target with smoothing
+let ballX = 0, ballY = 0, ballTX = 0, ballTY = 0;
+let accelAnimRunning = false;
+
+function accelBallLoop() {
+  const decay = 0.78;
+  ballX += (ballTX - ballX) * (1 - decay);
+  ballY += (ballTY - ballY) * (1 - decay);
+  const ball = document.getElementById('accelBall');
+  const wrap = document.getElementById('accelSvg').parentElement;
+  if (wrap._accelSize) {
+    const r = wrap._accelR;
+    const cx = wrap._accelCx, cy = wrap._accelCy;
+    const size = wrap._accelSize;
+    // Get wrap element bounds to position ball
+    const wr = wrap.getBoundingClientRect();
+    const svgRect = document.getElementById('accelSvg').getBoundingClientRect();
+    const offX = svgRect.left - wr.left;
+    const offY = svgRect.top - wr.top;
+    ball.style.left = (offX + cx + ballX * r * 0.65) + 'px';
+    ball.style.top  = (offY + cy + ballY * r * 0.65) + 'px';
+  }
+  requestAnimationFrame(accelBallLoop);
+}
+accelBallLoop();
+
+function updateAccel(ax, ay) {
+  // ax: lateral G (right=positive), ay: longitudinal G (forward=positive braking=-negative)
+  // Clamp to ±2G display
+  const mx = Math.max(-2, Math.min(2, ax)), my = Math.max(-2, Math.min(2, ay));
+  ballTX = mx / 2;   // normalize to -1..1 for radius multiplier
+  ballTY = -my / 2;  // invert Y: forward accel → ball moves back (physics)
+  document.getElementById('accelX').textContent = ax.toFixed(1);
+  document.getElementById('accelY').textContent = ay.toFixed(1);
+}
+
+// ═══════════════════════════════════════════════════════
+// ALTIMETER — dual needle, ×10 m scale
+// ═══════════════════════════════════════════════════════
+function buildAlt(size) {
+  const svg = document.getElementById('altSvg');
+  svg.innerHTML = '';
+  svg.setAttribute('width', size); svg.setAttribute('height', size);
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  const cx = size/2, cy = size/2, r = size/2 * 0.88;
+
+  svg.appendChild(svgEl('circle',{cx,cy,r,fill:'#1a0d00',stroke:'#6b3a1f','stroke-width':'1.5'}));
+
+  for (let i = 0; i < 50; i++) {
+    const major = i % 5 === 0, ang = (i/50)*360;
+    const r1 = r - 2, r2 = r1 - r*(major ? 0.13 : 0.07);
+    const t1 = pt(cx,cy,r1,ang), t2 = pt(cx,cy,r2,ang);
+    svg.appendChild(svgEl('line',{
+      x1:t1.x.toFixed(2),y1:t1.y.toFixed(2),x2:t2.x.toFixed(2),y2:t2.y.toFixed(2),
+      stroke: major ? '#c8a870' : '#4a2810','stroke-width': major ? 1.5 : 0.7
+    }));
+    if (major) {
+      const lp = pt(cx,cy,r2-r*0.12, ang);
+      const txt = svgEl('text',{x:lp.x.toFixed(2),y:(lp.y+r*0.04).toFixed(2),
+        'text-anchor':'middle',fill:'#a06030','font-size':(r*0.11).toFixed(1),'font-family':'Nixie One'});
+      txt.textContent = String(i/5);
+      svg.appendChild(txt);
+    }
   }
 
-  // Color arcs
-  // Climb arc: 0 → +50 m/min = 0° → -150° (CCW)
-  const arcP = (v1, v2, col, rr) => {
-    const a1 = vsAngle(v1), a2 = vsAngle(v2);
-    const tp1 = pt(cx, cy, rr, a1), tp2 = pt(cx, cy, rr, a2);
-    const dAngle = a2 - a1;
-    const large = Math.abs(dAngle) > 180 ? 1 : 0;
-    const sweep = dAngle > 0 ? 1 : 0; // 1=CW
-    return `<path d="M${tp1.x.toFixed(2)},${tp1.y.toFixed(2)} A${rr},${rr} 0 ${large},${sweep} ${tp2.x.toFixed(2)},${tp2.y.toFixed(2)}" fill="none" stroke="${col}" stroke-width="3" opacity=".25"/>`;
-  };
-  h += arcP(0, 50, '#33ff00', r - 10);   // climb: CW or CCW?
-  h += arcP(-50, 0, '#ff6644', r - 10);
+  // Short needle (×100 m, teal)
+  const sng = svgEl('g',{id:'altShort',transform:`rotate(0,${cx},${cy})`});
+  sng.appendChild(svgEl('line',{x1:cx,y1:cy+r*0.1,x2:cx,y2:cy-r*0.52,
+    stroke:'#55cccc','stroke-width':(r*0.025).toFixed(2),'stroke-linecap':'round'}));
+  svg.appendChild(sng);
 
-  // Scale label
-  h += `<text x="${cx}" y="${cy+43}" text-anchor="middle" fill="#3a1808" font-size="6" font-family="Oswald" letter-spacing="1">×10m/min</text>`;
+  // Long needle (×10 m, orange)
+  const lng = svgEl('g',{id:'altLong',transform:`rotate(0,${cx},${cy})`});
+  lng.appendChild(svgEl('line',{x1:cx,y1:cy+r*0.14,x2:cx,y2:cy-r*0.76,
+    stroke:'rgba(255,140,0,.3)','stroke-width':(r*0.07).toFixed(2),'stroke-linecap':'round'}));
+  lng.appendChild(svgEl('line',{x1:cx,y1:cy+r*0.14,x2:cx,y2:cy-r*0.76,
+    stroke:'#ff9944','stroke-width':(r*0.030).toFixed(2),'stroke-linecap':'round'}));
+  svg.appendChild(lng);
 
-  // Needle — drawn last = on top
-  h += `<g id="vsNeedle" transform="rotate(0,${cx},${cy})">
-    <line x1="${cx}" y1="${cy+10}" x2="${cx}" y2="${cy-r*0.76}"
-      stroke="#ff9944" stroke-width="2.5" stroke-linecap="round"/>
-    <line x1="${cx}" y1="${cx+10}" x2="${cx}" y2="${cy+10}"
-      stroke="#994400" stroke-width="1.5" stroke-linecap="round" opacity=".6"/>
-  </g>`;
+  svg.appendChild(svgEl('circle',{cx,cy,r:r*0.08,fill:'#c8a040'}));
+  svg.appendChild(svgEl('circle',{cx,cy,r:r*0.042,fill:'#f0d880'}));
 
-  // Hub
-  h += `<circle cx="${cx}" cy="${cy}" r="5" fill="#c8a040"/>
-  <circle cx="${cx}" cy="${cy}" r="2.2" fill="#f8f0c0"/>`;
-
-  svg.innerHTML = h;
+  registerNeedle('altL', lng, cx, cy, 0);
+  registerNeedle('altS', sng, cx, cy, 0);
 }
-buildVSSVG();
 
-let lastAlt = null, lastAltTime = null, smoothedVs = 0;
+function updateAlt(alt) {
+  const m = alt != null ? Math.round(alt) : null;
+  document.getElementById('altDigital').textContent = m != null ? m : '---';
+  if (m != null) {
+    setNeedleTarget('altL', (m / 100) * 360);   // 1 rot = 100 m
+    setNeedleTarget('altS', (m / 1000) * 360);  // 1 rot = 1000 m
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// VS INDICATOR — ×10 m/min, unclamped needle
+// ═══════════════════════════════════════════════════════
+const VS_DEG_PER_10 = 30; // 30° per 10 m/min, ±5 labels = ±150°
+
+function vsAngle(mpm) { return -(mpm / 10) * VS_DEG_PER_10; }
+
+function buildVS(size) {
+  const svg = document.getElementById('vsSvg');
+  svg.innerHTML = '';
+  svg.setAttribute('width', size); svg.setAttribute('height', size);
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  const cx = size/2, cy = size/2, r = size/2 * 0.88;
+
+  svg.appendChild(svgEl('circle',{cx,cy,r,fill:'#1a0d00',stroke:'#6b3a1f','stroke-width':'1.5'}));
+
+  // Major marks
+  [-5,-4,-3,-2,-1,0,1,2,3,4,5].forEach(v => {
+    const ang = vsAngle(v*10);
+    const r1 = r-2, r2 = r1-r*0.13;
+    const t1 = pt(cx,cy,r1,ang), t2 = pt(cx,cy,r2,ang);
+    const col = v>0?'#33ee00':v<0?'#ff6644':'#c8a870';
+    svg.appendChild(svgEl('line',{x1:t1.x.toFixed(2),y1:t1.y.toFixed(2),x2:t2.x.toFixed(2),y2:t2.y.toFixed(2),stroke:col,'stroke-width':'1.5'}));
+    const lp = pt(cx,cy,r2-r*0.12,ang);
+    const txt = svgEl('text',{x:lp.x.toFixed(2),y:(lp.y+r*0.04).toFixed(2),
+      'text-anchor':'middle',fill:col,'font-size':(r*0.105).toFixed(1),'font-family':'Nixie One'});
+    txt.textContent = v===0?'0':(v>0?'+':'')+v;
+    svg.appendChild(txt);
+  });
+  // Minor ticks
+  for (let v=-50;v<=50;v+=5) {
+    if(v%10===0) continue;
+    const ang=vsAngle(v),r1=r-2,r2=r1-r*0.06;
+    const t1=pt(cx,cy,r1,ang),t2=pt(cx,cy,r2,ang);
+    svg.appendChild(svgEl('line',{x1:t1.x.toFixed(2),y1:t1.y.toFixed(2),x2:t2.x.toFixed(2),y2:t2.y.toFixed(2),stroke:'#4a2810','stroke-width':'0.7'}));
+  }
+  // Color arcs
+  const arcSeg = (v1,v2,col,rr) => {
+    const a1=vsAngle(v1),a2=vsAngle(v2);
+    const p1=pt(cx,cy,rr,a1),p2=pt(cx,cy,rr,a2);
+    const sw = (a2-a1)>0?1:0;
+    return svgEl('path',{d:`M${p1.x.toFixed(2)},${p1.y.toFixed(2)} A${rr},${rr} 0 0,${sw} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`,
+      fill:'none',stroke:col,'stroke-width':(r*0.04).toFixed(2),opacity:'0.25'});
+  };
+  svg.appendChild(arcSeg(0,50,'#33ff00',r*0.88));
+  svg.appendChild(arcSeg(-50,0,'#ff6644',r*0.88));
+
+  const ng = svgEl('g',{id:'vsNeedle',transform:`rotate(0,${cx},${cy})`});
+  ng.appendChild(svgEl('line',{x1:cx,y1:cy+r*0.14,x2:cx,y2:cy-r*0.76,
+    stroke:'rgba(255,140,0,.3)','stroke-width':(r*0.07).toFixed(2),'stroke-linecap':'round'}));
+  ng.appendChild(svgEl('line',{x1:cx,y1:cy+r*0.14,x2:cx,y2:cy-r*0.76,
+    stroke:'#ff9944','stroke-width':(r*0.030).toFixed(2),'stroke-linecap':'round'}));
+  svg.appendChild(ng);
+  svg.appendChild(svgEl('circle',{cx,cy,r:r*0.08,fill:'#c8a040'}));
+  svg.appendChild(svgEl('circle',{cx,cy,r:r*0.042,fill:'#f0d880'}));
+
+  registerNeedle('vs', ng, cx, cy, 0);
+}
+
+let lastAlt=null,lastAltTime=null,smoothVs=0;
 
 function updateVS(alt) {
   const now = Date.now();
-  if (alt !== null) {
-    if (lastAlt !== null && lastAltTime !== null) {
-      const dt = (now - lastAltTime) / 60000;
-      if (dt >= 0.04) { // ~2.4s minimum
-        const rawVs = (alt - lastAlt) / dt;
-        // Light smoothing to avoid GPS noise spikes
-        smoothedVs = smoothedVs * 0.6 + rawVs * 0.4;
-        lastAlt = alt;
-        lastAltTime = now;
+  if (alt!=null) {
+    if (lastAlt!=null && lastAltTime!=null) {
+      const dt = (now-lastAltTime)/60000;
+      if (dt >= 0.04) {
+        const raw = (alt-lastAlt)/dt;
+        smoothVs = smoothVs*0.65 + raw*0.35;
+        lastAlt=alt; lastAltTime=now;
       }
-    } else {
-      lastAlt = alt;
-      lastAltTime = now;
-      smoothedVs = 0;
-    }
+    } else { lastAlt=alt; lastAltTime=now; smoothVs=0; }
 
-    // Needle rotates freely — NO clamp. Beyond ±50 m/min it wraps past scale labels.
-    rotateSvgGroup('vsNeedle', vsAngle(smoothedVs), VS_CX, VS_CY);
-    document.getElementById('vsDigital').textContent = Math.round(smoothedVs);
-
-    const arrow = document.getElementById('vsArrow');
-    if (smoothedVs > 5)       { arrow.textContent='↑'; arrow.className='vs-arrow up'; }
-    else if (smoothedVs < -5) { arrow.textContent='↓'; arrow.className='vs-arrow down'; }
-    else                      { arrow.textContent='→'; arrow.className='vs-arrow flat'; }
+    setNeedleTarget('vs', vsAngle(smoothVs)); // unclamped
+    document.getElementById('vsDigital').textContent = Math.round(smoothVs);
+    const a = document.getElementById('vsArrow');
+    if (smoothVs>8)       { a.textContent='↑'; a.className='vs-arrow up'; }
+    else if (smoothVs<-8) { a.textContent='↓'; a.className='vs-arrow dn'; }
+    else                  { a.textContent='→'; a.className='vs-arrow fl'; }
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// COMPASS
-// ═══════════════════════════════════════════════════════════════
-function updateHeading(h) {
-  if (h === null || h === undefined) return;
-  const deg = Math.round(h);
-  document.getElementById('headingValue').textContent = deg + '°';
-  const dirs = ['北 N','北東 NE','東 E','南東 SE','南 S','南西 SW','西 W','北西 NW'];
-  document.getElementById('directionName').textContent = dirs[Math.round(deg / 45) % 8];
-  document.getElementById('compassSvg').style.transform = `rotate(${-deg}deg)`;
+// ═══════════════════════════════════════════════════════
+// SECONDS ARC CLOCK
+// ═══════════════════════════════════════════════════════
+function buildSecArc(w) {
+  const svg = document.getElementById('secSvg');
+  svg.setAttribute('width', w); svg.setAttribute('height', 22);
+  svg.setAttribute('viewBox', `0 0 ${w} 22`);
+  svg.innerHTML = '';
+  svg.appendChild(svgEl('rect',{x:0,y:8,width:w,height:6,rx:3,fill:'#2a1505'}));
+  svg.appendChild(svgEl('rect',{id:'secBar',x:0,y:8,width:0,height:6,rx:3,fill:'#994d00'}));
+  const txt = svgEl('text',{id:'secNum',x:w/2,y:21,'text-anchor':'middle',
+    fill:'#7a3d00','font-size':'9','font-family':'Nixie One','letter-spacing':'1'});
+  txt.textContent = '00s';
+  svg.appendChild(txt);
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ACCURACY LAMPS
-// [0]=red, [1,2]=amber, [3,4,5]=green
-// Full accuracy → all 6 lit; degrades → lamps go out right to left
-// ═══════════════════════════════════════════════════════════════
-const LAMP_COLORS = ['red','amber','amber','green','green','green'];
-
-function updateAccLamps(acc) {
-  let litCount = 0;
-  if      (!acc)       litCount = 0;
-  else if (acc <=  3)  litCount = 6;
-  else if (acc <=  5)  litCount = 5;
-  else if (acc <= 10)  litCount = 4;
-  else if (acc <= 20)  litCount = 3;
-  else if (acc <= 50)  litCount = 2;
-  else if (acc <= 100) litCount = 1;
-  for (let i = 0; i < 6; i++) {
-    document.getElementById(`lmp${i}`).className =
-      'lamp' + (i < litCount ? ` lit-${LAMP_COLORS[i]}` : '');
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// POSITION
-// ═══════════════════════════════════════════════════════════════
-function updatePosition(lat, lon, alt, acc) {
-  document.getElementById('latValue').textContent = `LAT ${lat.toFixed(4)}`;
-  document.getElementById('lonValue').textContent = `LON ${lon.toFixed(4)}`;
-  document.getElementById('accValue').textContent = acc ? `±${Math.round(acc)}` : '±--';
-  const latDir = lat >= 0 ? 'N' : 'S';
-  const lonDir = lon >= 0 ? 'E' : 'W';
-  document.getElementById('coordDisplay').textContent =
-    `${Math.abs(lat).toFixed(3)}°${latDir} ${Math.abs(lon).toFixed(3)}°${lonDir}`;
-  updateAlt(alt);
-  updateVS(alt);
-  updateAccLamps(acc);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// CLOCK
-// ═══════════════════════════════════════════════════════════════
 function updateClock() {
   const now = new Date();
-  document.getElementById('timeValue').textContent =
-    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-  const days = ['日','月','火','水','木','金','土'];
-  document.getElementById('dateValue').textContent =
-    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日(${days[now.getDay()]})`;
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('timeBig').textContent = `${h}:${m}`;
+  const days=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  document.getElementById('dateSm').textContent =
+    `${days[now.getDay()]} ${now.getDate()} ${now.toLocaleString('en',{month:'short'})} ${now.getFullYear()}`;
   const s = now.getSeconds();
-  document.getElementById('secArc').style.strokeDashoffset = 175.9 * (1 - s / 60);
-  document.getElementById('secText').textContent = String(s).padStart(2,'0');
+  const bar = document.getElementById('secBar');
+  const num = document.getElementById('secNum');
+  if (bar) {
+    const w = parseFloat(document.getElementById('secSvg').getAttribute('width')) || 80;
+    bar.setAttribute('width', (s/60*w).toFixed(1));
+  }
+  if (num) num.textContent = String(s).padStart(2,'0')+'s';
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// GPS ACCURACY LAMPS
+// ═══════════════════════════════════════════════════════
+const LAMP_C = ['r','y','y','g','g','g'];
+function updateLamps(acc) {
+  let n = !acc?0:acc<=3?6:acc<=5?5:acc<=10?4:acc<=20?3:acc<=50?2:acc<=100?1:0;
+  for(let i=0;i<6;i++)
+    document.getElementById(`l${i}`).className = 'lamp' + (i<n?` ${LAMP_C[i]}`:'');
+}
+
+// ═══════════════════════════════════════════════════════
+// BUILD / RESIZE — compute gauge sizes from actual DOM layout
+// ═══════════════════════════════════════════════════════
+function buildAll() {
+  // Force layout to settle
+  requestAnimationFrame(() => {
+    const speedWrap = document.getElementById('speedWrap');
+    const sSz = getGaugeSize(speedWrap);
+    buildSpeedo(sSz);
+
+    const gaugeSvgs = ['compassGaugeSvg','accelSvg','altSvg','vsSvg'];
+    const wrapIds   = ['compassGaugeSvg','accelSvg','altSvg','vsSvg'];
+    // get parent .gauge-wrap for each
+    gaugeSvgs.forEach(id => {
+      const el = document.getElementById(id);
+      const wrap = el.closest('.gauge-wrap') || el.parentElement;
+      const sz = getGaugeSize(wrap);
+      if (id==='compassGaugeSvg') buildCompassGauge(sz);
+      else if (id==='accelSvg')   buildAccel(sz);
+      else if (id==='altSvg')     buildAlt(sz);
+      else if (id==='vsSvg')      buildVS(sz);
+    });
+
+    // Seconds bar width
+    const clockCard = document.getElementById('timeBig').closest('.card');
+    const cw = clockCard ? clockCard.getBoundingClientRect().width - 32 : 80;
+    buildSecArc(Math.max(40, cw));
+  });
+}
+
+// Rebuild on resize/orientation change
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(buildAll, 200);
+});
+
+// ═══════════════════════════════════════════════════════
 // GPS
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 function initGPS() {
-  document.getElementById('permOverlay').style.display = 'none';
   if (!navigator.geolocation) {
-    document.getElementById('gpsText').textContent = '非対応';
-    return;
+    document.getElementById('gpsText').textContent='NO GPS'; return;
   }
-  document.getElementById('gpsText').textContent = '取得中...';
+  document.getElementById('gpsText').textContent='ACQUIRING';
   navigator.geolocation.watchPosition(
     pos => {
-      const { latitude:lat, longitude:lon, altitude:alt, accuracy:acc, speed, heading } = pos.coords;
-      document.getElementById('gpsDot').className = 'gps-dot connected';
-      document.getElementById('gpsText').textContent = 'GPS受信中';
-      updateSpeed(speed || 0);
+      const {latitude:lat,longitude:lon,altitude:alt,accuracy:acc,speed,heading} = pos.coords;
+      document.getElementById('gpsDot').className='gps-dot on';
+      document.getElementById('gpsText').textContent='GPS ON';
+      updateSpeed(speed||0);
       updateHeading(heading);
-      updatePosition(lat, lon, alt, acc);
+      updateAlt(alt);
+      updateVS(alt);
+      updateLamps(acc);
     },
     () => {
-      document.getElementById('gpsDot').className = 'gps-dot';
-      document.getElementById('gpsText').textContent = 'エラー';
+      document.getElementById('gpsDot').className='gps-dot';
+      document.getElementById('gpsText').textContent='GPS ERR';
     },
-    { enableHighAccuracy:true, maximumAge:1000, timeout:15000 }
+    {enableHighAccuracy:true,maximumAge:1000,timeout:15000}
   );
 }
 
+// ═══════════════════════════════════════════════════════
+// ACCELEROMETER — DeviceMotion API
+// iOS 13+ requires user gesture to request permission
+// ═══════════════════════════════════════════════════════
+function initAccel() {
+  if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+    // iOS 13+
+    DeviceMotionEvent.requestPermission().then(state => {
+      if (state === 'granted') listenAccel();
+    }).catch(console.warn);
+  } else {
+    listenAccel();
+  }
+}
+
+function listenAccel() {
+  window.addEventListener('devicemotion', e => {
+    const a = e.accelerationIncludingGravity;
+    if (!a) return;
+    // ax: left/right (positive = right), ay: front/back (positive = forward on some devices)
+    // Divide by 9.81 to get G units, negate as needed for car orientation
+    const ax = (a.x || 0) / 9.81;
+    const ay = (a.y || 0) / 9.81;
+    updateAccel(ax, ay);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// START — triggered by button (required for iOS permissions)
+// ═══════════════════════════════════════════════════════
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('permOverlay').style.display = 'none';
+  buildAll();
+  initGPS();
+  initAccel();
+});
+
+// Service Worker
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js', { scope:'./' }).catch(()=>{});
+  navigator.serviceWorker.register('./sw.js', {scope:'./'}).catch(()=>{});
 }
 </script>
 </body>
