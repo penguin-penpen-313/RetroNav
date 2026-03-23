@@ -9,11 +9,11 @@
 <meta name="theme-color" content="#1a0d00">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>RetroNav Mk.05</title>
+<title>RetroNav Mk.06</title>
 <link href="https://fonts.googleapis.com/css2?family=Nixie+One&family=Orbitron:wght@400;700;900&family=Oswald:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --amber:#ffb347;--ag:#ff8c00;--ad:#7a3d00;
+  --ag:#ff8c00;--ad:#7a3d00;
   --nixie:#ff9933;--ng:#ff6000;
   --cream:#f5e6c8;--dk:#1a0d00;--dk2:#2a1505;
   --bd:#6b3a1f;--bd2:#3d1f0a;
@@ -21,6 +21,7 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Oswald',sans-serif}
 
+/* ─── Wood background ─── */
 .db{
   width:100%;height:100dvh;
   background:
@@ -35,11 +36,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Os
   background:linear-gradient(120deg,rgba(255,255,255,.07) 0%,transparent 40%,rgba(0,0,0,.12) 70%)}
 .scan{position:absolute;inset:0;z-index:3;pointer-events:none;
   background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.035) 3px,rgba(0,0,0,.035) 4px)}
+
+/* ─── Chrome + header ─── */
 .ct{height:5px;flex-shrink:0;z-index:10;position:relative;margin-top:env(safe-area-inset-top,0px);
   background:linear-gradient(180deg,#e8dcc8,#f5ede0 30%,#c8b89a 60%,#a09070);
   box-shadow:0 2px 6px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
-.hdr{display:flex;align-items:center;justify-content:space-between;padding:5px 11px 3px;z-index:10;flex-shrink:0}
-.bb{background:linear-gradient(145deg,#c8a870,#8b6914,#d4b484,#7a5c10);border-radius:4px;padding:4px 14px;border:1px solid #a08040;box-shadow:0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.3)}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:4px 11px 2px;z-index:10;flex-shrink:0}
+.bb{background:linear-gradient(145deg,#c8a870,#8b6914,#d4b484,#7a5c10);border-radius:4px;padding:3px 13px;border:1px solid #a08040;box-shadow:0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.3)}
 .bb span{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:3px;color:#1a0d00}
 .rv{width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#e8dcc8,#8b7050,#4a3020);box-shadow:0 2px 4px rgba(0,0,0,.6)}
 .gb{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:600;letter-spacing:2px;color:var(--ad);text-transform:uppercase}
@@ -48,86 +51,132 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Os
 @keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
 @keyframes gp{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}}
 
-/* Main container */
-.main{flex:1;display:flex;flex-direction:column;padding:3px 6px;gap:5px;z-index:10;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,0px)}
-.row{display:flex;gap:5px;align-items:stretch}
+/* ─── Main layout ─── */
+.main{
+  flex:1;display:flex;flex-direction:column;
+  padding:3px 6px env(safe-area-inset-bottom,0px) 6px;
+  gap:4px;z-index:10;overflow:hidden;
+}
 
-/* Card */
-.card{background:linear-gradient(145deg,var(--dk),var(--dk2));border-radius:10px;border:1px solid var(--bd);
+/* Speed section — tall, dominant */
+.speed-section{
+  flex:0 0 auto;
+  /* Portrait: 52% of available height */
+  height:52%;
+}
+
+/* Bottom section — remaining space */
+.bottom-section{
+  flex:1;min-height:0;
+  display:flex;flex-direction:column;gap:4px;
+}
+
+.row{display:flex;gap:4px;align-items:stretch;flex:1;min-height:0}
+
+/* ─── Card ─── */
+.card{
+  background:linear-gradient(145deg,var(--dk),var(--dk2));
+  border-radius:10px;border:1px solid var(--bd);
   box-shadow:0 0 0 2px var(--bd2),inset 0 1px 0 rgba(255,255,255,.04),0 3px 10px rgba(0,0,0,.5);
-  display:flex;flex-direction:column;align-items:center;padding:5px 7px 5px;flex:1;min-width:0;position:relative}
-.cl{font-size:9px;font-weight:600;letter-spacing:3px;color:var(--ad);text-transform:uppercase;margin-bottom:3px;font-family:'Oswald',sans-serif}
+  display:flex;flex-direction:column;align-items:center;
+  padding:5px 7px 4px;flex:1;min-width:0;position:relative;overflow:hidden;
+}
+.cl{font-size:9px;font-weight:600;letter-spacing:3px;color:var(--ad);text-transform:uppercase;margin-bottom:2px;font-family:'Oswald',sans-serif;flex-shrink:0}
 .gw{width:100%;position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
 .gw svg{display:block}
 
-.di{font-family:'Nixie One',monospace;color:var(--nixie);text-shadow:0 0 8px var(--ng);line-height:1;text-align:center}
-.di.lg{font-size:clamp(32px,7vw,60px)}
-.di.md{font-size:clamp(14px,2.8vw,22px)}
-.di.sm{font-size:clamp(11px,2.2vw,16px)}
-.ul{font-size:8px;letter-spacing:2px;color:var(--ad);text-transform:uppercase;line-height:1}
-
-/* GPS lamps */
-.lr{display:flex;gap:4px}
+/* ─── Speed card: gauge left, panel right ─── */
+#speedCard{
+  flex-direction:row;align-items:stretch;
+  padding:5px 8px 5px;
+}
+#speedCard .cl{
+  /* label spans full top in row layout — use absolute */
+  position:absolute;top:5px;left:0;right:0;
+  text-align:center;
+}
+.spd-gauge{
+  flex:1;min-width:0;
+  display:flex;align-items:center;justify-content:center;
+  padding-top:16px; /* room for label */
+}
+.spd-panel{
+  width:72px;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;padding-left:6px;padding-top:16px;
+}
+.spd-num{
+  font-family:'Nixie One',monospace;color:var(--nixie);
+  text-shadow:0 0 12px var(--ng),0 0 28px rgba(255,100,0,.3);
+  line-height:1;text-align:center;
+  font-size:clamp(38px,9vw,68px);
+}
+.spd-unit{font-size:9px;letter-spacing:2px;color:var(--ad);text-transform:uppercase;margin-top:2px}
+.gps-sig{display:flex;flex-direction:column;align-items:center;gap:3px}
+.lr{display:flex;gap:4px} /* single row */
 .lp{width:8px;height:8px;border-radius:50%;background:#1a0800;border:1px solid #3a1a08;transition:all .3s}
 .lp.r{background:#cc2200;border-color:#ff3300;box-shadow:0 0 5px #f20}
 .lp.y{background:#bb7700;border-color:#ffaa00;box-shadow:0 0 5px #f90}
 .lp.g{background:#22aa00;border-color:#44ff00;box-shadow:0 0 5px #2f0}
 
-/* ── SPEED CARD — row layout ── */
-#speedCard{flex-direction:row;align-items:center;padding:6px 8px}
-#speedCard .gw{flex:1;height:100%;align-self:stretch}
-.spd-side{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding-left:8px;flex-shrink:0;width:80px}
-.spd-num{font-family:'Nixie One',monospace;color:var(--nixie);text-shadow:0 0 10px var(--ng),0 0 25px rgba(255,100,0,.3);line-height:1;text-align:center;font-size:clamp(36px,8vw,64px)}
-.spd-unit{font-size:9px;letter-spacing:2px;color:var(--ad);text-transform:uppercase}
-.gps-sig{display:flex;flex-direction:column;align-items:center;gap:3px;margin-top:4px}
+/* ─── Small gauge labels ─── */
+.di{font-family:'Nixie One',monospace;color:var(--nixie);text-shadow:0 0 8px var(--ng);line-height:1;text-align:center}
+.di.md{font-size:clamp(13px,2.6vw,20px)}
+.di.sm{font-size:clamp(10px,2vw,14px)}
+.ul{font-size:7px;letter-spacing:2px;color:var(--ad);text-transform:uppercase;line-height:1}
 
-/* Compass dir */
-.cdir{display:flex;flex-direction:column;align-items:center;gap:1px;margin-top:2px}
-.cdeg{font-family:'Nixie One',monospace;font-size:clamp(13px,2.8vw,20px);color:var(--nixie);text-shadow:0 0 8px var(--ng);line-height:1}
-.cnam{font-size:8px;font-weight:600;letter-spacing:2px;color:var(--cream)}
+/* ─── Compass ─── */
+.cdir{display:flex;flex-direction:column;align-items:center;gap:1px;margin-top:1px}
+.cdeg{font-family:'Nixie One',monospace;font-size:clamp(12px,2.5vw,18px);color:var(--nixie);text-shadow:0 0 8px var(--ng);line-height:1}
+.cnam{font-size:7px;font-weight:600;letter-spacing:2px;color:var(--cream)}
 
-/* G-Force ball */
-.ab{position:absolute;width:13px;height:13px;border-radius:50%;
+/* ─── Accel ball — NO overflow clip so ball can exit circle ─── */
+.accel-outer{width:100%;flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}
+.ab{
+  position:absolute;width:12px;height:12px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#fff,#ffcc44 40%,#ff8800 70%,#cc4400);
-  box-shadow:0 0 10px #ff8800,0 0 20px rgba(255,140,0,.5);
-  transform:translate(-50%,-50%);pointer-events:none}
-.cal{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:7px;letter-spacing:1px;color:#4a2810;pointer-events:none}
+  box-shadow:0 0 10px #ff8800,0 0 18px rgba(255,140,0,.5);
+  transform:translate(-50%,-50%);pointer-events:none;z-index:10;
+}
+.cal{position:absolute;bottom:3px;left:0;right:0;text-align:center;font-size:7px;letter-spacing:1px;color:#4a2810;pointer-events:none}
 @keyframes cf{0%{color:#ffcc44;text-shadow:0 0 8px #ff8800}100%{color:#4a2810}}
 .cfl{animation:cf .8s ease-out forwards}
 
-/* AHI */
-.ahi-wrap{width:100%;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
-.ahi-canvas{border-radius:50%;display:block}
+/* ─── AHI ─── */
+.ahi-wrap{width:100%;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
+canvas.ahi{border-radius:50%;display:block}
+.ahi-cal{position:absolute;bottom:3px;left:0;right:0;text-align:center;font-size:7px;letter-spacing:1px;color:#4a2810;pointer-events:none}
 
-/* VS arrow */
-.va{font-size:13px;line-height:1}
+/* ─── VS arrow ─── */
+.va{font-size:12px;line-height:1}
 .va.up{color:#39ff14;text-shadow:0 0 6px #0f0}
 .va.dn{color:#ff3300;text-shadow:0 0 6px #f30}
 .va.fl{color:var(--ad)}
 
-/* Clock */
-.tb{font-family:'Nixie One',monospace;font-size:clamp(20px,4.5vw,38px);color:var(--nixie);text-shadow:0 0 10px var(--ng);letter-spacing:3px;line-height:1}
-.ds{font-family:'Nixie One',monospace;font-size:clamp(8px,1.5vw,11px);color:var(--ad);letter-spacing:1px;margin-top:2px}
+/* ─── Clock ─── */
+.tb{font-family:'Nixie One',monospace;font-size:clamp(18px,4vw,32px);color:var(--nixie);text-shadow:0 0 10px var(--ng);letter-spacing:3px;line-height:1}
+.ds{font-family:'Nixie One',monospace;font-size:clamp(7px,1.4vw,10px);color:var(--ad);letter-spacing:1px;margin-top:2px}
 
-/* Landscape */
+/* ─── Landscape ─── */
 @media(orientation:landscape){
-  .main{flex-direction:row}
-  .cl{display:flex;flex-direction:column;gap:5px;flex:0 0 auto}
-  .cr{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
-  .cr .row{flex:1}
+  .main{flex-direction:row;padding:3px 6px env(safe-area-inset-bottom,0px) 6px}
+  .speed-section{flex:0 0 45%;height:100%}
+  .bottom-section{flex:1;height:100%}
+  #speedCard{flex-direction:row}
 }
 
-/* Permission */
+/* ─── Permission overlay ─── */
 .pm{position:fixed;inset:0;background:rgba(10,5,0,.97);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px}
-.pt{font-family:'Orbitron',monospace;font-size:17px;font-weight:700;color:var(--amber);letter-spacing:2px;text-align:center}
+.pt{font-family:'Orbitron',monospace;font-size:17px;font-weight:700;color:#ffb347;letter-spacing:2px;text-align:center}
 .px{font-size:13px;color:var(--cream);text-align:center;line-height:1.8;opacity:.85}
 .pb{background:linear-gradient(145deg,#c8a870,#8b6914,#d4b484);border:none;border-radius:8px;padding:12px 32px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:3px;color:#1a0d00;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.3);text-transform:uppercase}
 .pb:active{transform:scale(.97)}
 </style>
 </head>
 <body>
+
 <div class="pm" id="perm">
-  <div class="bb"><span>RetroNav Mk.05</span></div>
+  <div class="bb"><span>RetroNav Mk.06</span></div>
   <div class="pt">Initialize Sensors</div>
   <div class="px">GPS and motion access required.<br>Tap below, then allow all permissions.</div>
   <button class="pb" id="startBtn">Start Engine</button>
@@ -138,63 +187,62 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Os
   <div class="ct"></div>
   <div class="hdr">
     <div class="rv"></div>
-    <div class="bb"><span>RetroNav Mk.05</span></div>
+    <div class="bb"><span>RetroNav Mk.06</span></div>
     <div class="gb"><div class="gd" id="gpsDot"></div><span id="gpsText">STANDBY</span></div>
     <div class="rv"></div>
   </div>
 
   <div class="main">
-    <div class="cl" id="colLeft">
 
-      <!-- ══ SPEED CARD — large gauge + side panel ══ -->
-      <div class="card" id="speedCard">
-        <div class="gw" id="speedWrap">
+    <!-- ══ SPEED — dominant top section ══ -->
+    <div class="speed-section">
+      <div class="card" id="speedCard" style="height:100%">
+        <div class="cl" style="position:absolute;top:5px;left:0;right:0;text-align:center">Speed</div>
+        <div class="spd-gauge" id="speedGauge">
           <svg id="speedSvg" style="overflow:visible"></svg>
         </div>
-        <div class="spd-side">
+        <div class="spd-panel">
           <div>
             <div class="spd-num" id="spdNum">0</div>
             <div class="spd-unit">km/h</div>
           </div>
           <div class="gps-sig">
+            <!-- Single row of 6 lamps -->
             <div class="lr">
               <div class="lp" id="l0"></div>
               <div class="lp" id="l1"></div>
               <div class="lp" id="l2"></div>
-            </div>
-            <div class="lr">
               <div class="lp" id="l3"></div>
               <div class="lp" id="l4"></div>
               <div class="lp" id="l5"></div>
             </div>
-            <div class="ul" style="font-size:7px;margin-top:1px">GPS SIG</div>
+            <div class="ul" style="font-size:7px;margin-top:2px">GPS SIG</div>
           </div>
         </div>
       </div>
+    </div>
 
-    </div><!-- /colLeft -->
+    <!-- ══ BOTTOM SECTION ══ -->
+    <div class="bottom-section">
 
-    <div class="cr" id="colRight">
       <!-- Row 1: Compass, G-Force, Attitude -->
-      <div class="row" id="row1">
+      <div class="row">
 
-        <!-- COMPASS — single magnetic needle, Mk.03 style -->
         <div class="card">
           <div class="cl">Compass</div>
-          <div class="gw">
-            <svg id="compassSvg" style="overflow:visible"></svg>
-          </div>
+          <div class="gw"><svg id="compassSvg" style="overflow:visible"></svg></div>
           <div class="cdir">
             <div class="cdeg" id="hdDeg">---</div>
             <div class="cnam" id="hdDir">· · ·</div>
           </div>
         </div>
 
-        <!-- G-FORCE — tap to calibrate -->
+        <!-- G-Force: tap to calibrate -->
         <div class="card" id="accelCard" style="cursor:pointer">
           <div class="cl">G-Force</div>
-          <div class="gw" id="accelWrap" style="position:relative">
-            <svg id="accelSvg" style="overflow:visible"></svg>
+          <!-- accel-outer does NOT clip overflow so ball can travel beyond dial -->
+          <div class="accel-outer" id="accelOuter">
+            <svg id="accelSvg" style="overflow:visible;display:block"></svg>
             <div class="ab" id="accelBall"></div>
           </div>
           <div style="display:flex;gap:5px;align-items:center;margin-top:2px">
@@ -204,22 +252,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Os
           <div class="cal" id="calHint">TAP TO CALIBRATE</div>
         </div>
 
-        <!-- ATTITUDE / HORIZON -->
+        <!-- Attitude / Horizon — tap to calibrate -->
         <div class="card">
           <div class="cl">Attitude</div>
           <div class="ahi-wrap" id="ahiWrap">
-            <canvas id="ahiCanvas" class="ahi-canvas"></canvas>
+            <canvas id="ahiCanvas" class="ahi"></canvas>
           </div>
           <div style="display:flex;gap:5px;align-items:center;margin-top:2px">
             <div style="text-align:center"><div class="di sm" id="pitchDig">0°</div><div class="ul">Pitch</div></div>
             <div style="text-align:center"><div class="di sm" id="rollDig">0°</div><div class="ul">Roll</div></div>
           </div>
+          <div class="ahi-cal" id="ahiCalHint">TAP TO CALIBRATE</div>
         </div>
 
       </div>
 
       <!-- Row 2: Altitude, VS, Clock -->
-      <div class="row" id="row2">
+      <div class="row">
 
         <div class="card">
           <div class="cl">Altitude</div>
@@ -240,7 +289,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Os
 
         <div class="card">
           <div class="cl">Time</div>
-          <div class="gw" style="justify-content:center;flex-direction:column;gap:2px">
+          <div class="gw" style="flex-direction:column;justify-content:center;gap:2px">
             <div class="tb" id="timeBig">--:--</div>
             <div class="ds" id="dateSm">--- -- ----</div>
             <svg id="secSvg" style="margin-top:3px"></svg>
@@ -248,83 +297,82 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Os
         </div>
 
       </div>
-    </div><!-- /colRight -->
+    </div>
   </div>
 </div>
 
 <script>
 'use strict';
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // SVG HELPERS
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 const NS='http://www.w3.org/2000/svg';
 function E(tag,a){const e=document.createElementNS(NS,tag);for(const[k,v]of Object.entries(a))e.setAttribute(k,String(v));return e}
 function pt(cx,cy,r,a){const rad=(a-90)*Math.PI/180;return{x:cx+r*Math.cos(rad),y:cy+r*Math.sin(rad)}}
-function setRot(el,deg,cx,cy){if(el)el.setAttribute('transform',`rotate(${deg.toFixed(3)},${cx},${cy})`)}
+function rot(el,deg,cx,cy){if(el)el.setAttribute('transform',`rotate(${deg.toFixed(3)},${cx},${cy})`)}
 
-// ═══════════════════════════════════════════════════
-// NEEDLE SYSTEM — smooth inertia + SHORTEST PATH for circular needles
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// NEEDLE SYSTEM — smooth inertia, circular shortest-path
+// ═══════════════════════════════════════════
 const N={};
 function reg(id,el,cx,cy,init=0,circular=false){N[id]={el,cur:init,tgt:init,cx,cy,circular}}
 function tgt(id,v){if(N[id])N[id].tgt=v}
-
 (function loop(){
   for(const n of Object.values(N)){
-    let diff=n.tgt-n.cur;
-    if(n.circular){
-      // Shortest path: wrap diff to [-180, 180]
-      diff=((diff%360)+540)%360-180;
-    }
-    if(Math.abs(diff)>0.05){
-      n.cur+=diff*0.15; // inertia factor
-      setRot(n.el,n.cur,n.cx,n.cy);
-    }else if(n.cur!==n.tgt && !n.circular){
-      n.cur=n.tgt; setRot(n.el,n.cur,n.cx,n.cy);
-    }
+    let d=n.tgt-n.cur;
+    if(n.circular) d=((d%360)+540)%360-180;
+    if(Math.abs(d)>0.05){n.cur+=d*.15;rot(n.el,n.cur,n.cx,n.cy)}
+    else if(n.cur!==n.tgt&&!n.circular){n.cur=n.tgt;rot(n.el,n.cur,n.cx,n.cy)}
   }
   requestAnimationFrame(loop);
 })();
 
-function sz(el){const r=el.getBoundingClientRect();return Math.min(r.width,r.height)||80}
+function gsz(el){const r=el.getBoundingClientRect();return Math.min(r.width,r.height)||80}
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // SPEEDOMETER
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 const SP={start:-130,span:260,max:180};
 function sa(k){return SP.start+(Math.min(Math.max(k,0),SP.max)/SP.max)*SP.span}
 
 function buildSpeedo(){
-  const wrap=document.getElementById('speedWrap');
+  const wrap=document.getElementById('speedGauge');
   const wr=wrap.getBoundingClientRect();
-  const s=Math.min(wr.width,wr.height);
-  if(s<10)return;
+  // Use height as primary constraint for the gauge (card is tall)
+  const s=Math.min(wr.width, wr.height); if(s<10)return;
   const svg=document.getElementById('speedSvg');
   svg.innerHTML='';
-  svg.setAttribute('width',s); svg.setAttribute('height',s);
-  svg.setAttribute('viewBox',`0 0 ${s} ${s}`);
-  const cx=s/2,cy=s/2,r=s/2*.88;
+  svg.setAttribute('width',s);svg.setAttribute('height',s);svg.setAttribute('viewBox',`0 0 ${s} ${s}`);
+  const cx=s/2,cy=s/2,r=s/2*.90;
 
+  // Track arc
   const p0=pt(cx,cy,r,SP.start),p1=pt(cx,cy,r,SP.start+SP.span);
   svg.appendChild(E('path',{d:`M${p0.x.toFixed(2)},${p0.y.toFixed(2)} A${r},${r} 0 1,1 ${p1.x.toFixed(2)},${p1.y.toFixed(2)}`,fill:'none',stroke:'#2a1505','stroke-width':r*.07}));
-  const pr0=pt(cx,cy,r*.9,sa(130)),pr1=pt(cx,cy,r*.9,sa(180));
-  svg.appendChild(E('path',{d:`M${pr0.x.toFixed(2)},${pr0.y.toFixed(2)} A${r*.9},${r*.9} 0 0,1 ${pr1.x.toFixed(2)},${pr1.y.toFixed(2)}`,fill:'none',stroke:'rgba(200,30,0,.55)','stroke-width':r*.065}));
+  // Red zone
+  const pr0=pt(cx,cy,r*.91,sa(130)),pr1=pt(cx,cy,r*.91,sa(180));
+  svg.appendChild(E('path',{d:`M${pr0.x.toFixed(2)},${pr0.y.toFixed(2)} A${r*.91},${r*.91} 0 0,1 ${pr1.x.toFixed(2)},${pr1.y.toFixed(2)}`,fill:'none',stroke:'rgba(200,30,0,.55)','stroke-width':r*.065}));
+  // Ticks + labels
   for(let i=0;i<=18;i++){
     const sp=i*10,ag=sa(sp),mj=i%3===0;
-    const r1=r*.97,r2=r1-r*(mj?.16:.08);
+    const r1=r*.97,r2=r1-r*(mj?.17:.085);
     const t1=pt(cx,cy,r1,ag),t2=pt(cx,cy,r2,ag);
-    svg.appendChild(E('line',{x1:t1.x.toFixed(2),y1:t1.y.toFixed(2),x2:t2.x.toFixed(2),y2:t2.y.toFixed(2),stroke:mj?'#c8a870':'#5a3020','stroke-width':mj?r*.022:r*.009}));
-    if(mj){const lp=pt(cx,cy,r2-r*.14,ag);const tx=E('text',{x:lp.x.toFixed(2),y:(lp.y+r*.035).toFixed(2),'text-anchor':'middle',fill:'#a06030','font-size':(r*.11).toFixed(1),'font-family':'Nixie One'});tx.textContent=String(sp);svg.appendChild(tx)}
+    svg.appendChild(E('line',{x1:t1.x.toFixed(2),y1:t1.y.toFixed(2),x2:t2.x.toFixed(2),y2:t2.y.toFixed(2),stroke:mj?'#c8a870':'#5a3020','stroke-width':mj?r*.023:r*.009}));
+    if(mj){
+      const lp=pt(cx,cy,r2-r*.14,ag);
+      const tx=E('text',{x:lp.x.toFixed(2),y:(lp.y+r*.036).toFixed(2),'text-anchor':'middle',fill:'#a06030','font-size':(r*.115).toFixed(1),'font-family':'Nixie One'});
+      tx.textContent=String(sp);svg.appendChild(tx);
+    }
   }
-  const nl=r*.78,nb=r*.16;
+  // Needle
+  const nl=r*.80,nb=r*.17;
   const ng=E('g',{id:'sN',transform:`rotate(${sa(0)},${cx},${cy})`});
-  ng.appendChild(E('line',{x1:cx,y1:cy+nb,x2:cx,y2:cy-nl,stroke:'rgba(255,100,0,.3)','stroke-width':(r*.07).toFixed(2),'stroke-linecap':'round'}));
-  ng.appendChild(E('line',{x1:cx,y1:cy+nb,x2:cx,y2:cy-nl,stroke:'#ff6600','stroke-width':(r*.032).toFixed(2),'stroke-linecap':'round'}));
-  ng.appendChild(E('line',{x1:cx,y1:cy-nl*.85,x2:cx,y2:cy-nl,stroke:'#ffdd66','stroke-width':(r*.022).toFixed(2),'stroke-linecap':'round'}));
+  ng.appendChild(E('line',{x1:cx,y1:cy+nb,x2:cx,y2:cy-nl,stroke:'rgba(255,100,0,.28)','stroke-width':(r*.072).toFixed(2),'stroke-linecap':'round'}));
+  ng.appendChild(E('line',{x1:cx,y1:cy+nb,x2:cx,y2:cy-nl,stroke:'#ff6600','stroke-width':(r*.033).toFixed(2),'stroke-linecap':'round'}));
+  ng.appendChild(E('line',{x1:cx,y1:cy-nl*.86,x2:cx,y2:cy-nl,stroke:'#ffdd66','stroke-width':(r*.022).toFixed(2),'stroke-linecap':'round'}));
   svg.appendChild(ng);
-  svg.appendChild(E('circle',{cx,cy,r:r*.10,fill:'#b89030'}));
-  svg.appendChild(E('circle',{cx,cy,r:r*.062,fill:'#e8d070'}));
-  svg.appendChild(E('circle',{cx,cy,r:r*.028,fill:'#fff8d0'}));
+  svg.appendChild(E('circle',{cx,cy,r:r*.105,fill:'#b89030'}));
+  svg.appendChild(E('circle',{cx,cy,r:r*.065,fill:'#e8d070'}));
+  svg.appendChild(E('circle',{cx,cy,r:r*.030,fill:'#fff8d0'}));
   reg('spd',ng,cx,cy,sa(0),false);
 }
 function updSpeed(mps){
@@ -333,194 +381,181 @@ function updSpeed(mps){
   tgt('spd',sa(k));
 }
 
-// ═══════════════════════════════════════════════════
-// COMPASS — single magnetic needle, Mk.03 polygon style
-// ═══════════════════════════════════════════════════
-// Magnetic heading: needle always points to North.
-// needle rotation = -heading (world N = top, rotate opposite to heading)
-// Use circular shortest-path for smooth 0-crossing.
-let magHeading=0; // track raw magnetic heading (0-360)
-
+// ═══════════════════════════════════════════
+// COMPASS — single magnetic, Mk.03 diamond needle, shortest-path
+// ═══════════════════════════════════════════
 function buildCompass(){
   const wrap=document.getElementById('compassSvg').closest('.gw');
-  const s=sz(wrap); if(s<10)return;
+  const s=gsz(wrap);if(s<10)return;
   const svg=document.getElementById('compassSvg');
-  svg.innerHTML='';
-  svg.setAttribute('width',s); svg.setAttribute('height',s);
-  svg.setAttribute('viewBox',`0 0 ${s} ${s}`);
+  svg.innerHTML='';svg.setAttribute('width',s);svg.setAttribute('height',s);svg.setAttribute('viewBox',`0 0 ${s} ${s}`);
   const cx=s/2,cy=s/2,r=s/2*.88;
-
   svg.appendChild(E('circle',{cx,cy,r,fill:'#1a0d00',stroke:'#6b3a1f','stroke-width':'1.5'}));
-
-  // Ticks — no cardinal labels
   for(let i=0;i<72;i++){
     const ag=i*5,mj=i%18===0,md=i%6===0;
     const r1=r-1,r2=r1-r*(mj?.15:md?.09:.05);
     const t1=pt(cx,cy,r1,ag),t2=pt(cx,cy,r2,ag);
     svg.appendChild(E('line',{x1:t1.x.toFixed(2),y1:t1.y.toFixed(2),x2:t2.x.toFixed(2),y2:t2.y.toFixed(2),stroke:mj?'#c8a870':md?'#6a3820':'#3a1808','stroke-width':mj?1.8:md?1:.6}));
   }
-  // North orange triangle marker (fixed at top, on the bezel)
+  // North triangle marker on bezel
   svg.appendChild(E('polygon',{points:`${cx},${(cy-r+2).toFixed(2)} ${(cx+4).toFixed(2)},${(cy-r+r*.15).toFixed(2)} ${(cx-4).toFixed(2)},${(cy-r+r*.15).toFixed(2)}`,fill:'#ff8800',opacity:'.9'}));
-
-  // Mk.03-style diamond needle (red N half, dim S half)
-  const nLen=r*.70,nBack=r*.25;
+  // Diamond needle
+  const nL=r*.70,nB=r*.25;
   const ng=E('g',{id:'cN',transform:`rotate(0,${cx},${cy})`});
-  ng.appendChild(E('polygon',{
-    points:`${cx},${(cy-nLen).toFixed(2)} ${(cx+r*.065).toFixed(2)},${cy} ${cx},${(cy+nBack).toFixed(2)} ${(cx-r*.065).toFixed(2)},${cy}`,
-    fill:'#ff3300',opacity:'.92'
-  }));
-  ng.appendChild(E('polygon',{
-    points:`${cx},${(cy+nLen*.72).toFixed(2)} ${(cx+r*.055).toFixed(2)},${cy} ${cx},${(cy+nBack).toFixed(2)} ${(cx-r*.055).toFixed(2)},${cy}`,
-    fill:'#885533',opacity:'.75'
-  }));
+  ng.appendChild(E('polygon',{points:`${cx},${(cy-nL).toFixed(2)} ${(cx+r*.065).toFixed(2)},${cy} ${cx},${(cy+nB).toFixed(2)} ${(cx-r*.065).toFixed(2)},${cy}`,fill:'#ff3300',opacity:'.92'}));
+  ng.appendChild(E('polygon',{points:`${cx},${(cy+nL*.72).toFixed(2)} ${(cx+r*.055).toFixed(2)},${cy} ${cx},${(cy+nB).toFixed(2)} ${(cx-r*.055).toFixed(2)},${cy}`,fill:'#885533',opacity:'.75'}));
   svg.appendChild(ng);
   svg.appendChild(E('circle',{cx,cy,r:r*.075,fill:'#c8a040'}));
   svg.appendChild(E('circle',{cx,cy,r:r*.038,fill:'#f0d880'}));
-
-  // Register as CIRCULAR for shortest-path interpolation
-  reg('cmp',ng,cx,cy,0,true);
+  reg('cmp',ng,cx,cy,0,true); // circular = shortest path
 }
-
-function updHeading(magDeg){
-  if(magDeg==null)return;
-  magHeading=magDeg;
-  // needle points to N: rotate opposite of heading
-  tgt('cmp',-magDeg);
-  document.getElementById('hdDeg').textContent=Math.round(magDeg)+'°';
+function updHeading(mag){
+  if(mag==null)return;
+  tgt('cmp',-mag); // needle points to N opposite to heading
+  document.getElementById('hdDeg').textContent=Math.round(mag)+'°';
   const d=['N','NE','E','SE','S','SW','W','NW'];
-  document.getElementById('hdDir').textContent=d[Math.round(magDeg/45)%8];
+  document.getElementById('hdDir').textContent=d[Math.round(mag/45)%8];
 }
 
-// ═══════════════════════════════════════════════════
-// G-FORCE — calibrated accelerometer
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// G-FORCE — 1G scale, ball unclamped (can exit circle)
+// ═══════════════════════════════════════════
 let calGx=0,calGy=0,calGz=0,rawGx=0,rawGy=0,rawGz=0;
+let accelReady=false; // set to true once we have first reading
 
 function buildAccel(){
-  const wrap=document.getElementById('accelWrap');
-  const s=sz(wrap); if(s<10)return;
+  const outer=document.getElementById('accelOuter');
+  const s=gsz(outer);if(s<10)return;
   const svg=document.getElementById('accelSvg');
-  svg.innerHTML='';
-  svg.setAttribute('width',s); svg.setAttribute('height',s);
-  svg.setAttribute('viewBox',`0 0 ${s} ${s}`);
+  svg.innerHTML='';svg.setAttribute('width',s);svg.setAttribute('height',s);svg.setAttribute('viewBox',`0 0 ${s} ${s}`);
   const cx=s/2,cy=s/2,r=s/2*.85;
+  // Face (no clip — ball can exit)
   svg.appendChild(E('circle',{cx,cy,r,fill:'#1a0d00',stroke:'#6b3a1f','stroke-width':'1.5'}));
-  [r*.33,r*.66].forEach(ri=>svg.appendChild(E('circle',{cx,cy,r:ri.toFixed(1),fill:'none',stroke:'#2e1008','stroke-width':'1'})));
+  // Single 1G ring
+  svg.appendChild(E('circle',{cx,cy,r:(r*.70).toFixed(1),fill:'none',stroke:'#2e1008','stroke-width':'1'}));
+  // Cross hairs
   svg.appendChild(E('line',{x1:(cx-r).toFixed(2),y1:cy,x2:(cx+r).toFixed(2),y2:cy,stroke:'#2e1008','stroke-width':'1'}));
   svg.appendChild(E('line',{x1:cx,y1:(cy-r).toFixed(2),x2:cx,y2:(cy+r).toFixed(2),stroke:'#2e1008','stroke-width':'1'}));
-  [['+1G',cx+r*.33+3,cy-2],['+2G',cx+r*.66+3,cy-2]].forEach(([t,x,y])=>{const e=E('text',{x:x.toFixed(2),y:y.toFixed(2),fill:'#4a2810','font-size':(r*.09).toFixed(1),'font-family':'Nixie One'});e.textContent=t;svg.appendChild(e)});
-  [['F',cx,cy-r+r*.14],['B',cx,cy+r-r*.09],['R',cx+r-r*.10,cy+r*.04],['L',cx-r+r*.11,cy+r*.04]].forEach(([t,x,y])=>{const e=E('text',{x:x.toFixed(2),y:y.toFixed(2),'text-anchor':'middle',fill:'#6a4028','font-size':(r*.12).toFixed(1),'font-family':'Oswald','font-weight':'600'});e.textContent=t;svg.appendChild(e)});
-  wrap._r=r;wrap._cx=cx;wrap._cy=cy;wrap._sz=s;
+  // Label only 1G
+  const lx=cx+r*.70+3, ly=cy-2;
+  const lb=E('text',{x:lx.toFixed(2),y:ly.toFixed(2),fill:'#4a2810','font-size':(r*.10).toFixed(1),'font-family':'Nixie One'});
+  lb.textContent='+1G';svg.appendChild(lb);
+  // Axis labels
+  [['F',cx,cy-r+r*.14],['B',cx,cy+r-r*.08],['R',cx+r-r*.09,cy+r*.04],['L',cx-r+r*.10,cy+r*.04]].forEach(([t,x,y])=>{
+    const e=E('text',{x:x.toFixed(2),y:y.toFixed(2),'text-anchor':'middle',fill:'#6a4028','font-size':(r*.12).toFixed(1),'font-family':'Oswald','font-weight':'600'});e.textContent=t;svg.appendChild(e)});
+  outer._r=r;outer._cx=cx;outer._cy=cy;outer._s=s;
 }
 
 let bx=0,by=0,btx=0,bty=0;
-(function bl(){
+(function ballLoop(){
   bx+=(btx-bx)*.18; by+=(bty-by)*.18;
   const ball=document.getElementById('accelBall');
-  const wrap=document.getElementById('accelWrap');
-  if(wrap&&wrap._sz){
-    const sr=document.getElementById('accelSvg').getBoundingClientRect();
-    const wr=wrap.getBoundingClientRect();
-    ball.style.left=(sr.left-wr.left+wrap._cx+bx*wrap._r*.65)+'px';
-    ball.style.top =(sr.top -wr.top +wrap._cy+by*wrap._r*.65)+'px';
+  const outer=document.getElementById('accelOuter');
+  const svgEl=document.getElementById('accelSvg');
+  if(outer&&outer._s&&svgEl){
+    const sr=svgEl.getBoundingClientRect();
+    const or=outer.getBoundingClientRect();
+    // 1G = ring radius. Ball can go up to 2G (1 extra radius beyond ring).
+    ball.style.left=(sr.left-or.left+outer._cx+bx*outer._r*.70)+'px';
+    ball.style.top =(sr.top -or.top +outer._cy+by*outer._r*.70)+'px';
   }
-  requestAnimationFrame(bl);
+  requestAnimationFrame(ballLoop);
 })();
 
-function calibrate(){
+function calibrateAccel(){
   calGx=rawGx;calGy=rawGy;calGz=rawGz;
-  const h=document.getElementById('calHint');
-  h.textContent='CALIBRATED ✓';h.className='cal cfl';
-  setTimeout(()=>{h.textContent='TAP TO CALIBRATE';h.className='cal'},2200);
+  flash('calHint','CALIBRATED ✓','TAP TO CALIBRATE');
 }
-document.getElementById('accelCard').addEventListener('click',calibrate);
+document.getElementById('accelCard').addEventListener('click',calibrateAccel);
 
 function updAccel(gx,gy,gz){
   rawGx=gx;rawGy=gy;rawGz=gz;
-  const ax=(gx-calGx)/9.81,ay=(gy-calGy)/9.81;
-  btx=Math.max(-1,Math.min(1,ax));
-  bty=Math.max(-1,Math.min(1,-ay));
+  if(!accelReady){accelReady=true} // first reading available
+  const ax=(gx-calGx)/9.81, ay=(gy-calGy)/9.81;
+  // No clamp — ball moves freely, 1G = 100% of ring radius
+  btx=ax; bty=-ay;
   document.getElementById('accelX').textContent=ax.toFixed(1);
   document.getElementById('accelY').textContent=ay.toFixed(1);
 }
 
-// ═══════════════════════════════════════════════════
-// AHI — canvas-based, uses ResizeObserver for reliable sizing
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// AHI — canvas, pitch+roll calibration on tap
+// ═══════════════════════════════════════════
 let ahiSz=100,ahiPitch=0,ahiRoll=0,ahiPC=0,ahiRC=0;
+let ahiPitchOfs=0,ahiRollOfs=0; // calibration offsets
+let ahiRawPitch=0,ahiRawRoll=0; // latest raw readings
+let ahiReady=false;
+
+function calibrateAHI(){
+  ahiPitchOfs=ahiRawPitch;
+  ahiRollOfs=ahiRawRoll;
+  flash('ahiCalHint','CALIBRATED ✓','TAP TO CALIBRATE');
+}
+document.getElementById('ahiWrap').addEventListener('click',calibrateAHI);
+
+function updAHI(rawPitch,rawRoll){
+  ahiRawPitch=rawPitch; ahiRawRoll=rawRoll;
+  if(!ahiReady){ahiReady=true}
+  ahiPitch=rawPitch-ahiPitchOfs;
+  ahiRoll =rawRoll -ahiRollOfs;
+  document.getElementById('pitchDig').textContent=Math.round(ahiPitch)+'°';
+  document.getElementById('rollDig').textContent=Math.round(ahiRoll)+'°';
+}
 
 function drawAHI(){
   const canvas=document.getElementById('ahiCanvas');
-  const s=ahiSz; if(s<10)return;
+  const s=ahiSz; if(s<10||!canvas)return;
   if(canvas.width!==s){canvas.width=s;canvas.height=s;canvas.style.width=s+'px';canvas.style.height=s+'px'}
   const ctx=canvas.getContext('2d');
   const cx=s/2,cy=s/2,r=s/2*.88;
   ctx.clearRect(0,0,s,s);
-
-  // Clip to circle
   ctx.save();
   ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.clip();
-
-  // Roll + pitch transform
   ctx.save();
-  ctx.translate(cx,cy);
-  ctx.rotate(ahiRC*Math.PI/180);
-  const pp=ahiPC*(r/30); // pixels per degree
-
+  ctx.translate(cx,cy);ctx.rotate(ahiRC*Math.PI/180);
+  const pp=ahiPC*(r/30);
   // Sky
   const gs=ctx.createLinearGradient(0,-r,0,pp);
   gs.addColorStop(0,'#1a3a5c');gs.addColorStop(1,'#2a5a8c');
-  ctx.fillStyle=gs;
-  ctx.fillRect(-r,-r,r*2,r+pp+2);
-
+  ctx.fillStyle=gs;ctx.fillRect(-r,-r,r*2,r+pp+2);
   // Ground
   const gg=ctx.createLinearGradient(0,pp,0,r);
   gg.addColorStop(0,'#5c3010');gg.addColorStop(1,'#3a1a08');
-  ctx.fillStyle=gg;
-  ctx.fillRect(-r,pp,r*2,r*2);
-
+  ctx.fillStyle=gg;ctx.fillRect(-r,pp,r*2,r*2);
   // Horizon line
   ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.globalAlpha=.9;
-  ctx.beginPath();ctx.moveTo(-r,pp);ctx.lineTo(r,pp);ctx.stroke();
-  ctx.globalAlpha=1;
-
+  ctx.beginPath();ctx.moveTo(-r,pp);ctx.lineTo(r,pp);ctx.stroke();ctx.globalAlpha=1;
   // Pitch ladder
-  ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1;
-  ctx.fillStyle='rgba(255,255,255,.6)';
-  ctx.font=`${Math.round(r*.09)}px Nixie One`;ctx.textAlign='center';
+  ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=1;
+  ctx.fillStyle='rgba(255,255,255,.55)';ctx.font=`${Math.round(r*.09)}px Nixie One`;ctx.textAlign='center';
   for(let p=-30;p<=30;p+=5){
     if(p===0)continue;
-    const py=pp-p*(r/30),hw=p%10===0?r*.35:r*.2;
+    const py=pp-p*(r/30),hw=p%10===0?r*.36:r*.20;
     ctx.beginPath();ctx.moveTo(-hw,py);ctx.lineTo(hw,py);ctx.stroke();
-    if(p%10===0){ctx.fillText(Math.abs(p),hw+r*.07,py+r*.03);ctx.fillText(Math.abs(p),-hw-r*.07,py+r*.03)}
+    if(p%10===0){ctx.fillText(Math.abs(p),hw+r*.08,py+r*.04);ctx.fillText(Math.abs(p),-hw-r*.08,py+r*.04)}
   }
-  ctx.restore(); // undo roll
-
-  // Fixed aircraft symbol
+  ctx.restore();
+  // Aircraft symbol (fixed, doesn't rotate)
   ctx.strokeStyle='#ffdd00';ctx.lineWidth=2;ctx.globalAlpha=.95;
-  ctx.beginPath();ctx.moveTo(cx-r*.38,cy);ctx.lineTo(cx-r*.1,cy);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(cx+r*.1,cy);ctx.lineTo(cx+r*.38,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx-r*.38,cy);ctx.lineTo(cx-r*.10,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx+r*.10,cy);ctx.lineTo(cx+r*.38,cy);ctx.stroke();
   ctx.beginPath();ctx.arc(cx,cy,r*.04,0,Math.PI*2);ctx.fillStyle='#ffdd00';ctx.fill();
   ctx.globalAlpha=1;
-  ctx.restore(); // undo clip
-
+  ctx.restore(); // end clip
   // Ring
-  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
-  ctx.strokeStyle='#6b3a1f';ctx.lineWidth=2;ctx.stroke();
-
-  // Roll arc ticks
-  ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='#6b3a1f';ctx.lineWidth=2;ctx.stroke();
+  // Roll ticks
+  ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;
   [60,45,30,20,10,0,-10,-20,-30,-45,-60].forEach(ra=>{
     const ag=(ra-90)*Math.PI/180;
     ctx.beginPath();
-    ctx.moveTo(cx+(r-r*.1)*Math.cos(ag),cy+(r-r*.1)*Math.sin(ag));
+    ctx.moveTo(cx+(r-r*.10)*Math.cos(ag),cy+(r-r*.10)*Math.sin(ag));
     ctx.lineTo(cx+(r-1)*Math.cos(ag),cy+(r-1)*Math.sin(ag));
     ctx.stroke();
   });
-
-  // Roll pointer triangle
+  // Roll pointer
   ctx.save();ctx.translate(cx,cy);ctx.rotate(ahiRC*Math.PI/180);
-  ctx.beginPath();ctx.moveTo(0,-(r-2));ctx.lineTo(-4,-(r-r*.11));ctx.lineTo(4,-(r-r*.11));ctx.closePath();
+  ctx.beginPath();ctx.moveTo(0,-(r-2));ctx.lineTo(-4,-(r-r*.12));ctx.lineTo(4,-(r-r*.12));ctx.closePath();
   ctx.fillStyle='#ffdd00';ctx.fill();
   ctx.restore();
 }
@@ -532,28 +567,20 @@ function drawAHI(){
   requestAnimationFrame(ahiLoop);
 })();
 
-function updAHI(pitch,roll){
-  ahiPitch=pitch;ahiRoll=roll;
-  document.getElementById('pitchDig').textContent=Math.round(pitch)+'°';
-  document.getElementById('rollDig').textContent=Math.round(roll)+'°';
-}
-
-// ResizeObserver for AHI — guarantees canvas is drawn once layout settles
-const ahiObs=new ResizeObserver(entries=>{
+new ResizeObserver(entries=>{
   for(const e of entries){
     const{width,height}=e.contentRect;
     const ns=Math.min(width,height);
-    if(ns>10&&ns!==ahiSz){ahiSz=ns;}
+    if(ns>10) ahiSz=ns;
   }
-});
-ahiObs.observe(document.getElementById('ahiWrap'));
+}).observe(document.getElementById('ahiWrap'));
 
-// ═══════════════════════════════════════════════════
-// ALTIMETER — dual needle
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// ALTIMETER
+// ═══════════════════════════════════════════
 function buildAlt(){
   const wrap=document.getElementById('altSvg').closest('.gw');
-  const s=sz(wrap);if(s<10)return;
+  const s=gsz(wrap);if(s<10)return;
   const svg=document.getElementById('altSvg');
   svg.innerHTML='';svg.setAttribute('width',s);svg.setAttribute('height',s);svg.setAttribute('viewBox',`0 0 ${s} ${s}`);
   const cx=s/2,cy=s/2,r=s/2*.88;
@@ -565,10 +592,10 @@ function buildAlt(){
     if(mj){const lp=pt(cx,cy,r2-r*.12,ag);const tx=E('text',{x:lp.x.toFixed(2),y:(lp.y+r*.04).toFixed(2),'text-anchor':'middle',fill:'#a06030','font-size':(r*.11).toFixed(1),'font-family':'Nixie One'});tx.textContent=String(i/5);svg.appendChild(tx)}
   }
   const sng=E('g',{id:'aS',transform:`rotate(0,${cx},${cy})`});
-  sng.appendChild(E('line',{x1:cx,y1:cy+r*.1,x2:cx,y2:cy-r*.52,stroke:'#55cccc','stroke-width':(r*.025).toFixed(2),'stroke-linecap':'round'}));
+  sng.appendChild(E('line',{x1:cx,y1:cy+r*.10,x2:cx,y2:cy-r*.52,stroke:'#55cccc','stroke-width':(r*.025).toFixed(2),'stroke-linecap':'round'}));
   svg.appendChild(sng);
   const lng=E('g',{id:'aL',transform:`rotate(0,${cx},${cy})`});
-  lng.appendChild(E('line',{x1:cx,y1:cy+r*.14,x2:cx,y2:cy-r*.76,stroke:'rgba(255,140,0,.28)','stroke-width':(r*.07).toFixed(2),'stroke-linecap':'round'}));
+  lng.appendChild(E('line',{x1:cx,y1:cy+r*.14,x2:cx,y2:cy-r*.76,stroke:'rgba(255,140,0,.26)','stroke-width':(r*.07).toFixed(2),'stroke-linecap':'round'}));
   lng.appendChild(E('line',{x1:cx,y1:cy+r*.14,x2:cx,y2:cy-r*.76,stroke:'#ff9944','stroke-width':(r*.030).toFixed(2),'stroke-linecap':'round'}));
   svg.appendChild(lng);
   svg.appendChild(E('circle',{cx,cy,r:r*.08,fill:'#c8a040'}));
@@ -581,18 +608,18 @@ function updAlt(alt){
   if(m!=null){tgt('aL',(m/100)*360);tgt('aS',(m/1000)*360)}
 }
 
-// ═══════════════════════════════════════════════════
-// VS INDICATOR
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// VS
+// ═══════════════════════════════════════════
 function buildVS(){
   const wrap=document.getElementById('vsSvg').closest('.gw');
-  const s=sz(wrap);if(s<10)return;
+  const s=gsz(wrap);if(s<10)return;
   const svg=document.getElementById('vsSvg');
   svg.innerHTML='';svg.setAttribute('width',s);svg.setAttribute('height',s);svg.setAttribute('viewBox',`0 0 ${s} ${s}`);
   const cx=s/2,cy=s/2,r=s/2*.88;
   svg.appendChild(E('circle',{cx,cy,r,fill:'#1a0d00',stroke:'#6b3a1f','stroke-width':'1.5'}));
   [-5,-4,-3,-2,-1,0,1,2,3,4,5].forEach(v=>{
-    const ag=-(v*10/10)*30,r1=r-2,r2=r1-r*.13;
+    const ag=-(v/10)*30,r1=r-2,r2=r1-r*.13;
     const t1=pt(cx,cy,r1,ag),t2=pt(cx,cy,r2,ag);
     const col=v>0?'#33ee00':v<0?'#ff6644':'#c8a870';
     svg.appendChild(E('line',{x1:t1.x.toFixed(2),y1:t1.y.toFixed(2),x2:t2.x.toFixed(2),y2:t2.y.toFixed(2),stroke:col,'stroke-width':'1.5'}));
@@ -600,7 +627,7 @@ function buildVS(){
   });
   for(let v=-50;v<=50;v+=5){if(v%10===0)continue;const ag=-(v/10)*30,r1=r-2,r2=r1-r*.06;const t1=pt(cx,cy,r1,ag),t2=pt(cx,cy,r2,ag);svg.appendChild(E('line',{x1:t1.x.toFixed(2),y1:t1.y.toFixed(2),x2:t2.x.toFixed(2),y2:t2.y.toFixed(2),stroke:'#4a2810','stroke-width':'.7'}))}
   const ng=E('g',{id:'vN',transform:`rotate(0,${cx},${cy})`});
-  ng.appendChild(E('line',{x1:cx,y1:cy+r*.14,x2:cx,y2:cy-r*.76,stroke:'rgba(255,140,0,.28)','stroke-width':(r*.07).toFixed(2),'stroke-linecap':'round'}));
+  ng.appendChild(E('line',{x1:cx,y1:cy+r*.14,x2:cx,y2:cy-r*.76,stroke:'rgba(255,140,0,.26)','stroke-width':(r*.07).toFixed(2),'stroke-linecap':'round'}));
   ng.appendChild(E('line',{x1:cx,y1:cy+r*.14,x2:cx,y2:cy-r*.76,stroke:'#ff9944','stroke-width':(r*.030).toFixed(2),'stroke-linecap':'round'}));
   svg.appendChild(ng);
   svg.appendChild(E('circle',{cx,cy,r:r*.08,fill:'#c8a040'}));
@@ -620,19 +647,18 @@ function updVS(alt){
   }
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // CLOCK
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 function buildSecBar(){
   const cc=document.getElementById('timeBig').closest('.card');
-  const w=Math.max(40,(cc?cc.getBoundingClientRect().width-22:80));
+  const w=Math.max(40,(cc?cc.getBoundingClientRect().width-20:80));
   const svg=document.getElementById('secSvg');
   svg.setAttribute('width',w);svg.setAttribute('height',18);svg.setAttribute('viewBox',`0 0 ${w} 18`);
   svg.innerHTML='';
   svg.appendChild(E('rect',{x:0,y:5,width:w,height:7,rx:3,fill:'#2a1505'}));
   svg.appendChild(E('rect',{id:'sBar',x:0,y:5,width:0,height:7,rx:3,fill:'#994d00'}));
-  const t=E('text',{id:'sNum',x:w/2,y:17,'text-anchor':'middle',fill:'#7a3d00','font-size':'8','font-family':'Nixie One','letter-spacing':'1'});t.textContent='00s';
-  svg.appendChild(t);
+  const t=E('text',{id:'sNum',x:w/2,y:17,'text-anchor':'middle',fill:'#7a3d00','font-size':'8','font-family':'Nixie One','letter-spacing':'1'});t.textContent='00s';svg.appendChild(t);
 }
 function updClock(){
   const n=new Date();
@@ -646,38 +672,64 @@ function updClock(){
 }
 setInterval(updClock,1000);updClock();
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // GPS LAMPS
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 const LC=['r','y','y','g','g','g'];
 function updLamps(acc){
   let n=!acc?0:acc<=3?6:acc<=5?5:acc<=10?4:acc<=20?3:acc<=50?2:acc<=100?1:0;
   for(let i=0;i<6;i++)document.getElementById(`l${i}`).className='lp'+(i<n?` ${LC[i]}`:'');
 }
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// FLASH HELPER
+// ═══════════════════════════════════════════
+function flash(id,msg,orig){
+  const el=document.getElementById(id);if(!el)return;
+  el.textContent=msg;el.className=el.className.replace(' cfl','')+' cfl';
+  setTimeout(()=>{el.textContent=orig;el.className=el.className.replace(' cfl','')},2200);
+}
+
+// ═══════════════════════════════════════════
 // BUILD ALL
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 function buildAll(){
   requestAnimationFrame(()=>{
-    buildSpeedo();
-    buildCompass();
-    buildAccel();
-    buildAlt();
-    buildVS();
-    buildSecBar();
-    // AHI: measure wrap and set size
-    const aw=document.getElementById('ahiWrap');
-    const ar=aw.getBoundingClientRect();
-    const ns=Math.min(ar.width,ar.height);
-    if(ns>10){ahiSz=ns;}
+    buildSpeedo();buildCompass();buildAccel();buildAlt();buildVS();buildSecBar();
+    const aw=document.getElementById('ahiWrap').getBoundingClientRect();
+    const ns=Math.min(aw.width,aw.height);if(ns>10)ahiSz=ns;
   });
 }
-let rT;window.addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(buildAll,200)});
+let rT;window.addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(buildAll,250)});
 
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// AUTO CALIBRATE — called after sensors start
+// ═══════════════════════════════════════════
+function autoCalibrate(){
+  // Calibrate accel immediately if we have a reading, otherwise defer
+  if(accelReady){
+    calibrateAccel();
+  } else {
+    // Defer up to 3s waiting for first motion reading
+    let tries=0;
+    const iv=setInterval(()=>{
+      if(accelReady||++tries>30){clearInterval(iv);if(accelReady)calibrateAccel()}
+    },100);
+  }
+  // Calibrate AHI immediately if we have a reading, otherwise defer
+  if(ahiReady){
+    calibrateAHI();
+  } else {
+    let tries=0;
+    const iv=setInterval(()=>{
+      if(ahiReady||++tries>30){clearInterval(iv);if(ahiReady)calibrateAHI()}
+    },100);
+  }
+}
+
+// ═══════════════════════════════════════════
 // GPS
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 function initGPS(){
   if(!navigator.geolocation){document.getElementById('gpsText').textContent='NO GPS';return}
   document.getElementById('gpsText').textContent='ACQUIRING';
@@ -693,12 +745,11 @@ function initGPS(){
   );
 }
 
-// ═══════════════════════════════════════════════════
-// DEVICE ORIENTATION — magnetic heading + pitch + roll
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// DEVICE ORIENTATION
+// ═══════════════════════════════════════════
 function initOrientation(){
   const h=e=>{
-    // Magnetic heading: prefer webkitCompassHeading (iOS), fallback to alpha
     const mag=e.webkitCompassHeading??e.alpha;
     if(mag!=null) updHeading(mag);
     if(e.beta!=null&&e.gamma!=null) updAHI(e.beta,e.gamma);
@@ -710,9 +761,9 @@ function initOrientation(){
   }
 }
 
-// ═══════════════════════════════════════════════════
-// DEVICE MOTION — accelerometer
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// DEVICE MOTION
+// ═══════════════════════════════════════════
 function initMotion(){
   const h=e=>{const g=e.accelerationIncludingGravity;if(g)updAccel(g.x||0,g.y||0,g.z||0)};
   if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
@@ -722,15 +773,17 @@ function initMotion(){
   }
 }
 
-// ═══════════════════════════════════════════════════
-// START
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// START ENGINE
+// ═══════════════════════════════════════════
 document.getElementById('startBtn').addEventListener('click',()=>{
   document.getElementById('perm').style.display='none';
   buildAll();
   initGPS();
   initOrientation();
   initMotion();
+  // Auto-calibrate both sensors after a short delay for sensors to warm up
+  setTimeout(autoCalibrate, 800);
 });
 
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});
