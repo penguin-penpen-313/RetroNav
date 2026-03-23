@@ -619,7 +619,7 @@ function buildVS(){
   const cx=s/2,cy=s/2,r=s/2*.88;
   svg.appendChild(E('circle',{cx,cy,r,fill:'#1a0d00',stroke:'#6b3a1f','stroke-width':'1.5'}));
   [-5,-4,-3,-2,-1,0,1,2,3,4,5].forEach(v=>{
-    const ag=-(v/10)*30,r1=r-2,r2=r1-r*.13;
+    const ag=-v*30,r1=r-2,r2=r1-r*.13;
     const t1=pt(cx,cy,r1,ag),t2=pt(cx,cy,r2,ag);
     const col=v>0?'#33ee00':v<0?'#ff6644':'#c8a870';
     svg.appendChild(E('line',{x1:t1.x.toFixed(2),y1:t1.y.toFixed(2),x2:t2.x.toFixed(2),y2:t2.y.toFixed(2),stroke:col,'stroke-width':'1.5'}));
